@@ -1,0 +1,198 @@
+import pandas as pd
+import numpy as np
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import RobustScaler
+from imblearn.over_sampling import SMOTE              # ci serve a bilanciare i dati del training set, il nostro dataset è fortemente sbilanciato (ci sono pochissime transazioni fraudolente)
+from sklearn.preprocessing import OneHotEncoder
+from category_encoders import TargetEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+
+### CLASSIFICATORI ###
+# Decision Tree
+from sklearn.tree import DecisionTreeClassifier
+# Naïve Bayes
+from sklearn.naive_bayes import GaussianNB   # il più comune (ci sono anche MultinomialNB e BernoulliNB se i dati sono discreti/binari)
+# K-NN
+from sklearn.neighbors import KNeighborsClassifier
+# Random Forest
+from sklearn.ensemble import RandomForestClassifier
+# AdaBoost
+from sklearn.ensemble import AdaBoostClassifier
+# XGBoost
+from xgboost import XGBClassifier
+
+
+df = pd.read_csv('train.csv')
+
+# # Conta i valori mancanti per colonna
+# missing_counts = df.isnull().sum()
+
+# # Ordina le colonne dal più “vuoto” al meno “vuoto”
+# missing_counts = missing_counts.sort_values(ascending=False)
+
+# # Mostra il risultato
+# print(missing_counts)
+
+# # colonne che sembrano categoriche (tipo object o pochi valori unici)
+# cat_cols = [col for col in df.columns if df[col].dtype == "object" or df[col].nunique() < 50]
+
+# for col in cat_cols:
+#     print(f"{col}: {df[col].nunique()} categorie")
+
+
+
+### PREPROCESSING ###
+# La colonna TransactionDT è in secondi: non usiamo il timestamp grezzo perché sono secondi cumulativi che non hanno
+# un significato immediato. Lo trasformiamo in features che catturino i pattern temporali.
+# -------------------- Feature temporali --------------------
+df["TransactionDT_days"] = (df["TransactionDT"] / (24*60*60)).astype(int)
+df["hour"] = (df["TransactionDT"] // 3600) % 24
+df["dayofweek"] = (df["TransactionDT"] // (24*3600)) % 7
+
+df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)
+df["hour_cos"] = np.cos(2 * np.pi * df["hour"] / 24)
+df["dayofweek_sin"] = np.sin(2 * np.pi * df["dayofweek"] / 7)
+df["dayofweek_cos"] = np.cos(2 * np.pi * df["dayofweek"] / 7)
+
+# # -------------------- Categorical features -------------------- Pare che non ce ne siano, sono tutte numeriche nel nostro dataset
+# # Selezioniamo solo le colonne categoriche reali
+# categorical_cols = [col for col in df.columns if df[col].dtype == "object"]
+
+# # Low/high cardinality
+# threshold = 10
+# low_cardinality = [col for col in categorical_cols if df[col].nunique() <= threshold]
+# high_cardinality = [col for col in categorical_cols if df[col].nunique() > threshold]
+
+# print("Low-cardinality features (One-Hot):", low_cardinality)
+# print("High-cardinality features (Target/Freq):", high_cardinality)
+
+# # One-hot encoding (low cardinality)
+# if low_cardinality:
+#     ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
+#     df_low = pd.DataFrame(ohe.fit_transform(df[low_cardinality]))
+#     df_low.columns = ohe.get_feature_names_out(low_cardinality)
+#     df_low.index = df.index
+# else:
+#     df_low = pd.DataFrame(index=df.index)
+
+# # Target encoding (high cardinality)
+# if high_cardinality:
+#     te = TargetEncoder(cols=high_cardinality)
+#     df_high = te.fit_transform(df[high_cardinality], df["isFraud"])
+# else:
+#     df_high = pd.DataFrame(index=df.index)
+
+# # Ricombiniamo i pezzi
+# df_final = pd.concat(
+#     [df.drop(columns=categorical_cols), df_low, df_high],
+#     axis=1
+# )
+
+# -------------------- Colonne numeriche --------------------
+num_cols = df.select_dtypes(include=np.number).columns.tolist()
+num_cols.remove("isFraud")  # escludiamo target
+
+imputer = SimpleImputer(strategy="median")
+df[num_cols] = imputer.fit_transform(df[num_cols])
+df[num_cols] = df[num_cols].fillna(-1)
+
+scaler = RobustScaler()
+df[num_cols] = scaler.fit_transform(df[num_cols])
+
+# -------------------- X e y --------------------
+X = df.drop(columns=["TransactionID_x", "TransactionID_y", "isFraud"])
+y = df["isFraud"]
+
+
+# -------------------- Train/Test split --------------------
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, random_state=42, stratify=y
+)
+
+# # -------------------- SMOTE --------------------
+# smote = SMOTE(random_state=42, sampling_strategy=1.0)
+# X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
+
+# # Unisco X e y in un unico DataFrame -- Se voglio evitarmi ogni volta di fare eseguire SMOTE da capo
+# # --- SOLO LA PRIMA VOLTA ---
+# train_resampled = X_train_res.copy()
+# train_resampled["isFraud"] = y_train_res
+# train_resampled.to_csv("train_smote_.csv", index=False)
+
+# print("Prima di SMOTE:", y_train.value_counts())
+# print("Dopo SMOTE:", y_train_res.value_counts())
+
+train_resampled = pd.read_csv("train_smote_07.csv")
+y_train_res = train_resampled["isFraud"]
+X_train_res = train_resampled.drop(columns=["isFraud"])
+
+param_grids = {
+    "DecisionTree": {
+        "model": DecisionTreeClassifier(),
+        "params": {
+            "max_depth": [3, 5, 10, None],
+            "min_samples_split": [2, 5, 10]
+        }
+    },
+    "NaiveBayes": {
+        "model": GaussianNB(),
+        "params": {}
+    },
+    "KNN": {
+        "model": KNeighborsClassifier(),
+        "params": {
+            "n_neighbors": [3, 5, 7, 11],
+            "weights": ["uniform", "distance"]
+        }
+    },
+    "RandomForest": {
+        "model": RandomForestClassifier(),
+        "params": {
+            "n_estimators": [50, 100, 200],
+            "max_depth": [5, 10, None]
+        }
+    },
+    "AdaBoost": {
+        "model": AdaBoostClassifier(),
+        "params": {
+            "n_estimators": [50, 100, 200],
+            "learning_rate": [0.01, 0.1, 1.0]
+        }
+    },
+    "XGBoost": {
+        "model": XGBClassifier(use_label_encoder=False, eval_metric="logloss"),
+        "params": {
+            "n_estimators": [50, 100, 200],
+            "max_depth": [3, 5, 7],
+            "learning_rate": [0.01, 0.1, 0.2]
+        }
+    }
+}
+
+results = []
+
+for name, cfg in param_grids.items():
+    grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="accuracy", n_jobs=-1)
+    grid.fit(X_train_res, y_train_res)
+    
+    best_model = grid.best_estimator_
+    y_pred = best_model.predict(X_test)
+    
+    # Calcolo metriche
+    metrics = {
+        "Model": name,
+        "Best Params": grid.best_params_,
+        "Accuracy": accuracy_score(y_test, y_pred),
+        "Precision": precision_score(y_test, y_pred, average="weighted"),
+        "Recall": recall_score(y_test, y_pred, average="weighted"),
+        "F1-score": f1_score(y_test, y_pred, average="weighted"),
+        "Confusion Matrix": confusion_matrix(y_test, y_pred).tolist()
+    }
+    results.append(metrics)
+
+# Salvo su CSV
+df_results = pd.DataFrame(results)
+df_results.to_csv("model_results.csv", index=False)
+print(df_results)
