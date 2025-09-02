@@ -1,0 +1,2 @@
+Model,Best Params,Accuracy,Specificity,Precision,Recall,F1-score,Confusion Matrix
+DecisionTree,"{'max_depth': None, 'min_samples_split': 5}",0.9650286178751651,0.5522648083623694,0.9667870594270849,0.9650286178751651,0.9658595097647051,"[[139619, 2850], [2313, 2853]]"

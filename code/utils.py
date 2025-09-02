@@ -12,16 +12,16 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 ### CLASSIFICATORI ###
 # Decision Tree
 from sklearn.tree import DecisionTreeClassifier
-# # Naïve Bayes
-# from sklearn.naive_bayes import GaussianNB   # il più comune (ci sono anche MultinomialNB e BernoulliNB se i dati sono discreti/binari)
-# # K-NN
-# from sklearn.neighbors import KNeighborsClassifier
-# # Random Forest
-# from sklearn.ensemble import RandomForestClassifier
-# # AdaBoost
-# from sklearn.ensemble import AdaBoostClassifier
-# # XGBoost
-# from xgboost import XGBClassifier
+# Naïve Bayes
+from sklearn.naive_bayes import GaussianNB   # il più comune (ci sono anche MultinomialNB e BernoulliNB se i dati sono discreti/binari)
+# K-NN
+from sklearn.neighbors import KNeighborsClassifier
+# Random Forest
+from sklearn.ensemble import RandomForestClassifier
+# AdaBoost
+from sklearn.ensemble import AdaBoostClassifier
+# XGBoost
+from xgboost import XGBClassifier
 
 
 ### INIZIALIZATION OPERATIONS ###
@@ -36,24 +36,24 @@ DIM_TEST_SMALL = 0.7
 # Instanziazione dei modelli con relativi parametri
 print("Instantiating models...")
 param_grids = {
-    "DecisionTree": {
-        "model": DecisionTreeClassifier(),
-        "params": {
-            "max_depth": [3, 5, 10, None],
-            "min_samples_split": [2, 5, 10]
-        }
-    }
+    # "DecisionTree": {
+    #     "model": DecisionTreeClassifier(),
+    #     "params": {
+    #         "max_depth": [3, 5, 10, None],
+    #         "min_samples_split": [2, 5, 10]
+    #     }
+    # }
     # "NaiveBayes": {
     #     "model": GaussianNB(),
     #     "params": {}
     # },
-    # "KNN": {
-    #     "model": KNeighborsClassifier(),
-    #     "params": {
-    #         "n_neighbors": [3, 5, 7, 11],
-    #         "weights": ["uniform", "distance"]
-    #     }
-    # },
+    "KNN": {
+        "model": KNeighborsClassifier(),
+        "params": {
+            "n_neighbors": [3, 5, 7, 11],
+            "weights": ["uniform", "distance"]
+        }
+    },
     # "RandomForest": {
     #     "model": RandomForestClassifier(),
     #     "params": {
@@ -81,11 +81,11 @@ param_grids = {
 
 ### DATASET ###
 print("Loading imbalanced dataset...")
-df = pd.read_csv('C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\train.csv')
+df = pd.read_csv('C:\\Users\\asus\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset.csv')
 
 # Caricamento del training set già bilanciato
 print("Loading resampled training set...")
-train_resampled = pd.read_csv('C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\train_smote_07.csv')
+train_resampled = pd.read_csv('C:\\Users\\asus\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_07.csv')
 y_train_res = train_resampled["isFraud"]
 X_train_res = train_resampled.drop(columns=["isFraud"])
 
@@ -165,7 +165,7 @@ print("Processing numerical features...")
 num_cols = df.select_dtypes(include=np.number).columns.tolist()
 num_cols.remove("isFraud")  # escludiamo target
 
-imputer = SimpleImputer(strategy="median")
+imputer = SimpleImputer(strategy="mean")
 df[num_cols] = imputer.fit_transform(df[num_cols])
 df[num_cols] = df[num_cols].fillna(-1)
 
