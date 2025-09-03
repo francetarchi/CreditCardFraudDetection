@@ -40,40 +40,57 @@ param_grids = {
     #     "model": DecisionTreeClassifier(),
     #     "params": {
     #         "max_depth": [3, 5, 10, None],
-    #         "min_samples_split": [2, 5, 10]
+    #         "min_samples_split": [2, 5, 10],
+    #         "criterion": ["gini", "entropy", "log_loss"],
+    #         "splitter": ["best", "random"],
+    #         "max_leaf_nodes": [None, 10, 20, 30],   
+    #         "min_samples_leaf": [1, 2, 5], 
     #     }
     # }
     # "NaiveBayes": {
     #     "model": GaussianNB(),
-    #     "params": {}
+    #     "params": {
+    #         "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6] 
+    #     }
     # },
-    "KNN": {
-        "model": KNeighborsClassifier(),
-        "params": {
-            "n_neighbors": [3, 5, 7, 11],
-            "weights": ["uniform", "distance"]
-        }
-    },
+    # "KNN": {
+    #     "model": KNeighborsClassifier(),
+    #     "params": {
+    #         "n_neighbors": [3, 5, 7, 11],
+    #         "weights": ["uniform", "distance"],
+    #         "p": [1, 2],
+    #         "algorithm": ["auto", "ball_tree", "kd_tree", "brute"]
+    #     }
+    # },
     # "RandomForest": {
     #     "model": RandomForestClassifier(),
     #     "params": {
     #         "n_estimators": [50, 100, 200],
-    #         "max_depth": [5, 10, None]
+    #         "max_depth": [5, 10, None],
+    #         "criterion": ['entropy', 'gini'],
+    #         'max_leaf_nodes':  [None, 10, 20, 30],
+    #         'max_samples': [None, 0.5, 0.9],
+    #         'min_samples_split': [2, 5, 10], 
+    #         'min_impurity_decrease': [0.0, 0.1, 0.2],
+    #         'bootstrap': [False, True]
     #     }
     # },
     # "AdaBoost": {
     #     "model": AdaBoostClassifier(),
     #     "params": {
     #         "n_estimators": [50, 100, 200],
-    #         "learning_rate": [0.01, 0.1, 1.0]
+    #         "learning_rate": [0.01, 0.1, 1.0],
+    #         "algorithm": ["SAMME", "SAMME.R"]
     #     }
     # },
     # "XGBoost": {
     #     "model": XGBClassifier(use_label_encoder=False, eval_metric="logloss"),
     #     "params": {
     #         "n_estimators": [50, 100, 200],
-    #         "max_depth": [3, 5, 7],
-    #         "learning_rate": [0.01, 0.1, 0.2]
+    #         "max_depth": [3, 5, 7, 10],
+    #         "learning_rate": [0.01, 0.1, 0.2, 1.0],
+    #         "min_child_weight": [1, 3, 5],
+    #         "gamma": [0, 0.1, 0.2]
     #     }
     # }
 }
@@ -81,11 +98,11 @@ param_grids = {
 
 ### DATASET ###
 print("Loading imbalanced dataset...")
-df = pd.read_csv('C:\\Users\\asus\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset.csv')
+df = pd.read_csv("C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset.csv")
 
 # Caricamento del training set già bilanciato
 print("Loading resampled training set...")
-train_resampled = pd.read_csv('C:\\Users\\asus\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_07.csv')
+train_resampled = pd.read_csv('C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_07.csv')
 y_train_res = train_resampled["isFraud"]
 X_train_res = train_resampled.drop(columns=["isFraud"])
 

@@ -1,0 +1,2 @@
+Model,Best Params,Accuracy,Specificity,Precision,Recall,F1-score,Confusion Matrix
+RandomForest,"{'max_depth': None, 'n_estimators': 200}",0.9802350391167406,0.48509485094850946,0.9790150958239572,0.9802350391167406,0.977324244003399,"[[142211, 258], [2660, 2506]]"
