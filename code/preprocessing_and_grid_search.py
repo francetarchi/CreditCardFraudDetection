@@ -3,7 +3,7 @@ import numpy as np
 import os
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import RobustScaler
-from imblearn.over_sampling import SMOTE              # ci serve a bilanciare i dati del training set, il nostro dataset è fortemente sbilanciato (ci sono pochissime transazioni fraudolente)
+from imblearn.over_sampling import SMOTE
 from sklearn.preprocessing import OneHotEncoder
 from category_encoders import TargetEncoder
 from sklearn.model_selection import train_test_split
@@ -14,7 +14,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 # Decision Tree
 from sklearn.tree import DecisionTreeClassifier
 # Naïve Bayes
-from sklearn.naive_bayes import GaussianNB   # il più comune (ci sono anche MultinomialNB e BernoulliNB se i dati sono discreti/binari)
+from sklearn.naive_bayes import GaussianNB
 # K-NN
 from sklearn.neighbors import KNeighborsClassifier
 # Random Forest
@@ -37,17 +37,17 @@ DIM_TEST_SMALL = 0.7
 # Instanziazione dei modelli con relativi parametri
 print("Instantiating models...")
 param_grids = {
-    # "DecisionTree": {
-    #     "model": DecisionTreeClassifier(),
-    #     "params": {
-    #         "max_depth": [3, 5, 10, None],
-    #         "min_samples_split": [2, 5, 10],
-    #         "criterion": ["gini", "entropy", "log_loss"],
-    #         "splitter": ["best", "random"],
-    #         "max_leaf_nodes": [None, 10, 20, 30],   
-    #         "min_samples_leaf": [1, 2, 5], 
-    #     }
-    # }
+    "DecisionTree": {
+        "model": DecisionTreeClassifier(),
+        "params": {
+            "max_depth": [3, 5, 10, None],
+            "min_samples_split": [2, 5, 10],
+            "criterion": ["gini", "entropy", "log_loss"],
+            "splitter": ["best", "random"],
+            "max_leaf_nodes": [None, 10, 20, 30],   
+            "min_samples_leaf": [1, 2, 5], 
+        }
+    }
     # "NaiveBayes": {
     #     "model": GaussianNB(),
     #     "params": {
@@ -103,7 +103,7 @@ df = pd.read_csv("C:\\Users\\berte\\OneDrive - University of Pisa\\File di Franc
 
 # Caricamento del training set già bilanciato
 print("Loading resampled training set...")
-train_resampled = pd.read_csv('C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_07.csv')
+train_resampled = pd.read_csv('C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_10.csv')
 y_train_res = train_resampled["isFraud"]
 X_train_res = train_resampled.drop(columns=["isFraud"])
 
@@ -143,40 +143,6 @@ df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)
 df["hour_cos"] = np.cos(2 * np.pi * df["hour"] / 24)
 df["dayofweek_sin"] = np.sin(2 * np.pi * df["dayofweek"] / 7)
 df["dayofweek_cos"] = np.cos(2 * np.pi * df["dayofweek"] / 7)
-
-# # -------------------- Categorical features -------------------- Pare che non ce ne siano, sono tutte numeriche nel nostro dataset
-# # Selezioniamo solo le colonne categoriche reali
-# categorical_cols = [col for col in df.columns if df[col].dtype == "object"]
-
-# # Low/high cardinality
-# threshold = 10
-# low_cardinality = [col for col in categorical_cols if df[col].nunique() <= threshold]
-# high_cardinality = [col for col in categorical_cols if df[col].nunique() > threshold]
-
-# print("Low-cardinality features (One-Hot):", low_cardinality)
-# print("High-cardinality features (Target/Freq):", high_cardinality)
-
-# # One-hot encoding (low cardinality)
-# if low_cardinality:
-#     ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
-#     df_low = pd.DataFrame(ohe.fit_transform(df[low_cardinality]))
-#     df_low.columns = ohe.get_feature_names_out(low_cardinality)
-#     df_low.index = df.index
-# else:
-#     df_low = pd.DataFrame(index=df.index)
-
-# # Target encoding (high cardinality)
-# if high_cardinality:
-#     te = TargetEncoder(cols=high_cardinality)
-#     df_high = te.fit_transform(df[high_cardinality], df["isFraud"])
-# else:
-#     df_high = pd.DataFrame(index=df.index)
-
-# # Ricombiniamo i pezzi
-# df_final = pd.concat(
-#     [df.drop(columns=categorical_cols), df_low, df_high],
-#     axis=1
-# )
 
 # -------------------- Colonne numeriche --------------------
 print("Processing numerical features...")
@@ -231,12 +197,6 @@ for name, cfg in param_grids.items():
     
     print("Instantiating grid for GridSearch...")
     grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="accuracy", n_jobs=4, verbose=2)
-
-    # print(f"Training with all hyper-parameters...")
-    # grid.fit(X_train_res, y_train_res)
-
-    # print(f"Finding model with best hyper-parameters...")
-    # best_model = grid.best_estimator_
     
     print(f"Finding best hyper-parameters (on small rebalanced training set)...")
     grid.fit(X_train_res_small, y_train_res_small)
@@ -258,15 +218,25 @@ for name, cfg in param_grids.items():
     print(f"[1,0]: {confusion_matrix(y_test, y_pred)[1,0]}")
     print(f"[1,1]: {confusion_matrix(y_test, y_pred)[1,1]}")
 
+    cm = confusion_matrix(y_test, y_pred, labels=[0,1])
+    tn, fp, fn, tp = cm.ravel()
+
+    specificity = tn / (tn + fp)
+    sensitivity = tp / (tp + fn)
+
     metrics = {
         "Model": name,
         "Best Params": grid.best_params_,
         "Accuracy": accuracy_score(y_test, y_pred),
-        "Specificity": confusion_matrix(y_test, y_pred)[1,1] / (confusion_matrix(y_test, y_pred)[1,1] + confusion_matrix(y_test, y_pred)[1,0]),
-        "Precision": precision_score(y_test, y_pred, average="weighted"),
-        "Recall": recall_score(y_test, y_pred, average="weighted"),
-        "F1-score": f1_score(y_test, y_pred, average="weighted"),
-        "Confusion Matrix": confusion_matrix(y_test, y_pred).tolist()
+        "Specificity": specificity,        
+        "Precision": precision_score(y_test, y_pred),
+        "Recall": recall_score(y_test, y_pred),
+        "F1": f1_score(y_test, y_pred),
+        "Precision_weighted": precision_score(y_test, y_pred, average="weighted"),
+        "Recall_weighted": recall_score(y_test, y_pred, average="weighted"),
+        "F1_weighted": f1_score(y_test, y_pred, average="weighted"),
+        "Balanced_Accuracy": (specificity + sensitivity) / 2,
+        "Confusion Matrix": cm.tolist(),
     }
     results.append(metrics)
 

@@ -1,5 +1,0 @@
-Model,Best Params,Accuracy,Specificity,Precision,Recall,F1-score,Confusion Matrix
-RandomForest,"{'max_depth': None, 'n_estimators': 200}",0.9802350391167406,0.48509485094850946,0.9790150958239572,0.9802350391167406,0.977324244003399,"[[142211, 258], [2660, 2506]]"
-RandomForest,"{'criterion': 'entropy', 'max_depth': None, 'max_leaf_nodes': None, 'n_estimators': 200}",0.9801063433467674,0.4819976771196283,0.978856523100315,0.9801063433467674,0.9771557610457426,"[[142208, 261], [2676, 2490]]"
-RandomForest,"{'criterion': 'entropy', 'max_depth': None, 'max_leaf_nodes': None, 'max_samples': None, 'min_samples_split': 2, 'n_estimators': 200}",0.9801740779625427,0.4835462640340689,0.9789416803781715,0.9801740779625427,0.9772431335588551,"[[142210, 259], [2668, 2498]]"
-RandomForest,"{'bootstrap': False, 'criterion': 'entropy', 'max_depth': None, 'max_leaf_nodes': None, 'max_samples': None, 'min_impurity_decrease': 0.0, 'min_samples_split': 2, 'n_estimators': 200}",0.980641446811393,0.4895470383275261,0.9796241691018243,0.980641446811393,0.9777686675154633,"[[142248, 221], [2637, 2529]]"

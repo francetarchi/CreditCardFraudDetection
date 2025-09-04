@@ -1,4 +1,0 @@
-Model,Best Params,Accuracy,Specificity,Precision,Recall,F1-score,Confusion Matrix
-DecisionTree,"{'max_depth': None, 'min_samples_split': 5}",0.9650286178751651,0.5522648083623694,0.9667870594270849,0.9650286178751651,0.9658595097647051,"[[139619, 2850], [2313, 2853]]"
-DecisionTree,"{'criterion': 'entropy', 'max_depth': None, 'min_samples_split': 5, 'splitter': 'best'}",0.964222575947438,0.540650406504065,0.9660140932321446,0.964222575947438,0.9650711170871322,"[[139560, 2909], [2373, 2793]]"
-DecisionTree,"{'criterion': 'entropy', 'max_depth': None, 'max_leaf_nodes': None, 'min_samples_leaf': 2, 'min_samples_split': 5, 'splitter': 'best'}",0.9657601517255393,0.5183894696089818,0.9660126913209942,0.9657601517255393,0.9658853120284651,"[[139902, 2567], [2488, 2678]]"
