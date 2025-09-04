@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 from sklearn.impute import SimpleImputer
@@ -43,8 +44,8 @@ param_grids = {
     #         "min_samples_split": [2, 5, 10],
     #         "criterion": ["gini", "entropy", "log_loss"],
     #         "splitter": ["best", "random"],
-    #         "max_leaf_nodes": [None, 10, 20, 30],   
-    #         "min_samples_leaf": [1, 2, 5], 
+    #         "max_leaf_nodes": [None, 10, 20, 30],
+    #         "min_samples_leaf": [1, 2, 5]
     #     }
     # }
     # "NaiveBayes": {
@@ -52,16 +53,16 @@ param_grids = {
     #     "params": {
     #         "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6] 
     #     }
-    # },
-    # "KNN": {
-    #     "model": KNeighborsClassifier(),
-    #     "params": {
-    #         "n_neighbors": [3, 5, 7, 11],
-    #         "weights": ["uniform", "distance"],
-    #         "p": [1, 2],
-    #         "algorithm": ["auto", "ball_tree", "kd_tree", "brute"]
-    #     }
-    # },
+    # }
+    "KNN": {
+        "model": KNeighborsClassifier(),
+        "params": {
+            "n_neighbors": [3, 5, 7, 11],
+            "weights": ["uniform", "distance"],
+            # "p": [1, 2],
+            # "algorithm": ["auto", "ball_tree", "kd_tree", "brute"]
+        }
+    }
     # "RandomForest": {
     #     "model": RandomForestClassifier(),
     #     "params": {
@@ -74,7 +75,7 @@ param_grids = {
     #         'min_impurity_decrease': [0.0, 0.1, 0.2],
     #         'bootstrap': [False, True]
     #     }
-    # },
+    # }
     # "AdaBoost": {
     #     "model": AdaBoostClassifier(),
     #     "params": {
@@ -82,7 +83,7 @@ param_grids = {
     #         "learning_rate": [0.01, 0.1, 1.0],
     #         "algorithm": ["SAMME", "SAMME.R"]
     #     }
-    # },
+    # }
     # "XGBoost": {
     #     "model": XGBClassifier(use_label_encoder=False, eval_metric="logloss"),
     #     "params": {
@@ -271,11 +272,19 @@ for name, cfg in param_grids.items():
 
 
 ### RESULTS ###
+# Creo un DataFrame con i risultati
+df_results = pd.DataFrame(results)
+
 # Salvo i risultati su un file CSV
 print("Saving results to CSV...")
-df_results = pd.DataFrame(results)
-df_results.to_csv(f"model_results/{name}_{DIM_TRAIN_SMALL*100}.csv", index=False)
+file_path = f"model_results/{name}_{DIM_TRAIN_SMALL*100}.csv"
+if os.path.exists(file_path):
+    # Apro in append, senza scrivere l'header
+    df_results.to_csv(file_path, mode='a', index=False, header=False)
+else:
+    # Se non esiste, scrivo normalmente con header
+    df_results.to_csv(file_path, index=False)
 
-# Mostro i risultati
+# Mostro i risultati a schermo
 print("\nRESULTS:")
 print(df_results)
