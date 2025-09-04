@@ -1,8 +1,8 @@
 import os
-import pandas as pd
 import datetime
-from sklearn.model_selection import train_test_split
+import pandas as pd
 from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
 
@@ -30,7 +30,6 @@ DIM_TEST_SMALL = 0.7
 
 ### INIZIALIZATION OPERATIONS ###
 print("\nINIZIALIZING OPERATIONS:")
-
 # Instanziazione dei modelli con relativi parametri
 print("Instantiating models...")
 param_grids = {
@@ -96,7 +95,6 @@ param_grids = {
 
 ### DATASET ###
 print("\nDATASETS LOADING:")
-
 # Caricamento del dataset grezzo
 print("Loading imbalanced preprocessed dataset...")
 # df = pd.read_csv("C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset_preprocessed.csv")
@@ -138,7 +136,7 @@ for name, cfg in param_grids.items():
     print(f"\nModel: {name}")
     
     print("Instantiating grid for GridSearch...")
-    grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="accuracy", n_jobs=4, verbose=True)
+    grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="accuracy", n_jobs=4, verbose=2)
     
     print(f"Finding best hyper-parameters (on small rebalanced training set)...")
     grid.fit(X_train_res_small, y_train_res_small)
@@ -157,22 +155,31 @@ for name, cfg in param_grids.items():
     cm = confusion_matrix(y_test, y_pred)
     print(f"Confusion matrix:\n{cm}\n")
 
+    cm = confusion_matrix(y_test, y_pred, labels=[0,1])
+    tn, fp, fn, tp = cm.ravel()
+
+    specificity = tn / (tn + fp)
+    sensitivity = tp / (tp + fn)
+
     metrics = {
         "Model": name,
         "Best Params": grid.best_params_,
         "Accuracy": accuracy_score(y_test, y_pred),
-        "Specificity": cm[1,1] / (cm[1,1] + cm[1,0]),
-        "Precision": precision_score(y_test, y_pred, average="weighted"),
-        "Recall": recall_score(y_test, y_pred, average="weighted"),
-        "F1-score": f1_score(y_test, y_pred, average="weighted"),
-        "Confusion Matrix": cm.tolist()
+        "Specificity": specificity,        
+        "Precision": precision_score(y_test, y_pred),
+        "Recall": recall_score(y_test, y_pred),
+        "F1": f1_score(y_test, y_pred),
+        "Precision_weighted": precision_score(y_test, y_pred, average="weighted"),
+        "Recall_weighted": recall_score(y_test, y_pred, average="weighted"),
+        "F1_weighted": f1_score(y_test, y_pred, average="weighted"),
+        "Balanced_Accuracy": (specificity + sensitivity) / 2,
+        "Confusion Matrix": cm.tolist(),
     }
     results.append(metrics)
 
 
 ### RESULTS ###
 print("\nRESULTS:")
-
 # Creo un DataFrame con i risultati
 df_results = pd.DataFrame(results)
 
