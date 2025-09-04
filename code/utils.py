@@ -1,20 +1,16 @@
 import os
 import pandas as pd
-import numpy as np
-from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import RobustScaler
-from imblearn.over_sampling import SMOTE              # ci serve a bilanciare i dati del training set, il nostro dataset è fortemente sbilanciato (ci sono pochissime transazioni fraudolente)
-from sklearn.preprocessing import OneHotEncoder
-from category_encoders import TargetEncoder
+import datetime
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+
 
 ### CLASSIFICATORI ###
 # Decision Tree
 from sklearn.tree import DecisionTreeClassifier
 # Naïve Bayes
-from sklearn.naive_bayes import GaussianNB   # il più comune (ci sono anche MultinomialNB e BernoulliNB se i dati sono discreti/binari)
+from sklearn.naive_bayes import GaussianNB
 # K-NN
 from sklearn.neighbors import KNeighborsClassifier
 # Random Forest
@@ -25,14 +21,15 @@ from sklearn.ensemble import AdaBoostClassifier
 from xgboost import XGBClassifier
 
 
-### INIZIALIZATION OPERATIONS ###
-print("\nINIZIALIZING OPERATIONS:")
-
-# Dichiarazione costanti
+### COSTANTI ###
 DIM_TRAIN = 0.75
 DIM_TEST = 0.25
 DIM_TRAIN_SMALL = 0.3
 DIM_TEST_SMALL = 0.7
+
+
+### INIZIALIZATION OPERATIONS ###
+print("\nINIZIALIZING OPERATIONS:")
 
 # Instanziazione dei modelli con relativi parametri
 print("Instantiating models...")
@@ -98,99 +95,12 @@ param_grids = {
 
 
 ### DATASET ###
-print("Loading imbalanced dataset...")
-# df = pd.read_csv("C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset.csv")
-df = pd.read_csv("C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset.csv")
+print("\nDATASETS LOADING:")
 
-# Caricamento del training set già bilanciato
-print("Loading resampled training set...")
-# train_resampled = pd.read_csv('C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_07.csv')
-train_resampled = pd.read_csv('C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\train_smote_07.csv')
-y_train_res = train_resampled["isFraud"]
-X_train_res = train_resampled.drop(columns=["isFraud"])
-
-# Riduzione del training set già bilanciato per la GridSearch (per trovare i migliori ipermarametri per ogni modello)
-print("Splitting data into train and test sets...")
-X_train_res_small, _, y_train_res_small, _ = train_test_split(
-    X_train_res, y_train_res, train_size=DIM_TRAIN_SMALL, stratify=y_train_res, random_state=42
-)
-
-# # Conta i valori mancanti per colonna
-# missing_counts = df.isnull().sum()
-
-# # Ordina le colonne dal più “vuoto” al meno “vuoto”
-# missing_counts = missing_counts.sort_values(ascending=False)
-
-# # Mostra il risultato
-# print(missing_counts)
-
-# # colonne che sembrano categoriche (tipo object o pochi valori unici)
-# cat_cols = [col for col in df.columns if df[col].dtype == "object" or df[col].nunique() < 50]
-
-# for col in cat_cols:
-#     print(f"{col}: {df[col].nunique()} categorie")
-
-
-### PREPROCESSING ###
-print("\nPREPROCESSING:")
-# La colonna TransactionDT è in secondi: non usiamo il timestamp grezzo perché sono secondi cumulativi che non hanno
-# un significato immediato. Lo trasformiamo in features che catturino i pattern temporali.
-# -------------------- Feature temporali --------------------
-print("Creating temporal features...")
-df["TransactionDT_days"] = (df["TransactionDT"] / (24*60*60)).astype(int)
-df["hour"] = (df["TransactionDT"] // 3600) % 24
-df["dayofweek"] = (df["TransactionDT"] // (24*3600)) % 7
-
-df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)
-df["hour_cos"] = np.cos(2 * np.pi * df["hour"] / 24)
-df["dayofweek_sin"] = np.sin(2 * np.pi * df["dayofweek"] / 7)
-df["dayofweek_cos"] = np.cos(2 * np.pi * df["dayofweek"] / 7)
-
-# # -------------------- Categorical features -------------------- Pare che non ce ne siano, sono tutte numeriche nel nostro dataset
-# # Selezioniamo solo le colonne categoriche reali
-# categorical_cols = [col for col in df.columns if df[col].dtype == "object"]
-
-# # Low/high cardinality
-# threshold = 10
-# low_cardinality = [col for col in categorical_cols if df[col].nunique() <= threshold]
-# high_cardinality = [col for col in categorical_cols if df[col].nunique() > threshold]
-
-# print("Low-cardinality features (One-Hot):", low_cardinality)
-# print("High-cardinality features (Target/Freq):", high_cardinality)
-
-# # One-hot encoding (low cardinality)
-# if low_cardinality:
-#     ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
-#     df_low = pd.DataFrame(ohe.fit_transform(df[low_cardinality]))
-#     df_low.columns = ohe.get_feature_names_out(low_cardinality)
-#     df_low.index = df.index
-# else:
-#     df_low = pd.DataFrame(index=df.index)
-
-# # Target encoding (high cardinality)
-# if high_cardinality:
-#     te = TargetEncoder(cols=high_cardinality)
-#     df_high = te.fit_transform(df[high_cardinality], df["isFraud"])
-# else:
-#     df_high = pd.DataFrame(index=df.index)
-
-# # Ricombiniamo i pezzi
-# df_final = pd.concat(
-#     [df.drop(columns=categorical_cols), df_low, df_high],
-#     axis=1
-# )
-
-# -------------------- Colonne numeriche --------------------
-print("Processing numerical features...")
-num_cols = df.select_dtypes(include=np.number).columns.tolist()
-num_cols.remove("isFraud")  # escludiamo target
-
-imputer = SimpleImputer(strategy="mean")
-df[num_cols] = imputer.fit_transform(df[num_cols])
-df[num_cols] = df[num_cols].fillna(-1)
-
-scaler = RobustScaler()
-df[num_cols] = scaler.fit_transform(df[num_cols])
+# Caricamento del dataset grezzo
+print("Loading imbalanced preprocessed dataset...")
+# df = pd.read_csv("C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset_preprocessed.csv")
+df = pd.read_csv("C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset_preprocessed.csv")
 
 # -------------------- X e y --------------------
 print("Creating feature matrix (X) and target vector (y)...")
@@ -204,22 +114,18 @@ _, X_test, _, y_test = train_test_split(
     X, y, test_size=DIM_TEST, random_state=42, stratify=y
 )
 
-# # -------------------- SMOTE --------------------
-# print("Applying SMOTE to balance the training set...")
-# smote = SMOTE(random_state=42, sampling_strategy=1.0)
-# X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
+# Caricamento del training set già bilanciato
+print("Loading balanced preprocessed training set...")
+# train_resampled = pd.read_csv('C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_10.csv')
+train_resampled = pd.read_csv('C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\train_smote_10.csv')
+y_train_res = train_resampled["isFraud"]
+X_train_res = train_resampled.drop(columns=["isFraud"])
 
-# # Unisco X e y in un unico DataFrame -- Se voglio evitarmi ogni volta di fare eseguire SMOTE da capo
-# # --- SOLO LA PRIMA VOLTA ---
-# train_resampled = X_train_res.copy()
-# train_resampled["isFraud"] = y_train_res
-# train_resampled.to_csv("train_smote_.csv", index=False)
-
-# print("Prima di SMOTE:", y_train.value_counts())
-# print("Dopo SMOTE:", y_train_res.value_counts())
-
-# print("Training set size before SMOTE: ", X_train.shape)
-# print("Training set size after SMOTE: ", X_train_res.shape)
+# Riduzione del training set già bilanciato per la GridSearch (per trovare i migliori ipermarametri per ogni modello)
+print("Reducing balanced training set for GridSearch...")
+X_train_res_small, _, y_train_res_small, _ = train_test_split(
+    X_train_res, y_train_res, train_size=DIM_TRAIN_SMALL, stratify=y_train_res, random_state=42
+)
 
 
 ### TRAINING AND TESTING ###
@@ -233,12 +139,6 @@ for name, cfg in param_grids.items():
     
     print("Instantiating grid for GridSearch...")
     grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="accuracy", n_jobs=4, verbose=True)
-
-    # print(f"Training with all hyper-parameters...")
-    # grid.fit(X_train_res, y_train_res)
-
-    # print(f"Finding model with best hyper-parameters...")
-    # best_model = grid.best_estimator_
     
     print(f"Finding best hyper-parameters (on small rebalanced training set)...")
     grid.fit(X_train_res_small, y_train_res_small)
@@ -271,6 +171,8 @@ for name, cfg in param_grids.items():
 
 
 ### RESULTS ###
+print("\nRESULTS:")
+
 # Creo un DataFrame con i risultati
 df_results = pd.DataFrame(results)
 
@@ -285,5 +187,9 @@ else:
     df_results.to_csv(file_path, index=False)
 
 # Mostro i risultati a schermo
-print("\nRESULTS:")
 print(df_results)
+
+
+### TIMING ###
+now = datetime.datetime.now()
+print("\nEnd of execution:", now.strftime("%Y-%m-%d %H:%M:%S"))
