@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import os
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import RobustScaler
 from imblearn.over_sampling import SMOTE              # ci serve a bilanciare i dati del training set, il nostro dataset è fortemente sbilanciato (ci sono pochissime transazioni fraudolente)
@@ -79,7 +80,7 @@ param_grids = {
     #     "model": AdaBoostClassifier(),
     #     "params": {
     #         "n_estimators": [50, 100, 200],
-    #         "learning_rate": [0.01, 0.1, 1.0],
+    #         "learning_rate": [0.01, 0.1, 0.5, 1.0],
     #         "algorithm": ["SAMME", "SAMME.R"]
     #     }
     # },
@@ -88,7 +89,7 @@ param_grids = {
     #     "params": {
     #         "n_estimators": [50, 100, 200],
     #         "max_depth": [3, 5, 7, 10],
-    #         "learning_rate": [0.01, 0.1, 0.2, 1.0],
+    #         "learning_rate": [0.01, 0.1, 0.2, 0.5, 1.0],
     #         "min_child_weight": [1, 3, 5],
     #         "gamma": [0, 0.1, 0.2]
     #     }
@@ -229,7 +230,7 @@ for name, cfg in param_grids.items():
     print(f"\nModel: {name}")
     
     print("Instantiating grid for GridSearch...")
-    grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="accuracy", n_jobs=4, verbose=True)
+    grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="accuracy", n_jobs=4, verbose=2)
 
     # print(f"Training with all hyper-parameters...")
     # grid.fit(X_train_res, y_train_res)
@@ -273,8 +274,17 @@ for name, cfg in param_grids.items():
 ### RESULTS ###
 # Salvo i risultati su un file CSV
 print("Saving results to CSV...")
+# Percorso del file
+csv_file = f"model_results/{name}_{DIM_TRAIN_SMALL*100}.csv"
+# Creo il DataFrame dei risultati correnti
 df_results = pd.DataFrame(results)
-df_results.to_csv(f"model_results/{name}_{DIM_TRAIN_SMALL*100}.csv", index=False)
+# Controllo se il file esiste già
+if os.path.exists(csv_file):
+    # Apro in append, senza scrivere l'header
+    df_results.to_csv(csv_file, mode='a', index=False, header=False)
+else:
+    # Se non esiste, scrivo normalmente con header
+    df_results.to_csv(csv_file, index=False)
 
 # Mostro i risultati
 print("\nRESULTS:")
