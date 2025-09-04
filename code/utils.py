@@ -80,7 +80,7 @@ param_grids = {
     #     "model": AdaBoostClassifier(),
     #     "params": {
     #         "n_estimators": [50, 100, 200],
-    #         "learning_rate": [0.01, 0.1, 1.0],
+    #         "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0],
     #         "algorithm": ["SAMME", "SAMME.R"]
     #     }
     # }
@@ -89,7 +89,7 @@ param_grids = {
     #     "params": {
     #         "n_estimators": [50, 100, 200],
     #         "max_depth": [3, 5, 7, 10],
-    #         "learning_rate": [0.01, 0.1, 0.2, 1.0],
+    #         "learning_rate": [0.01, 0.1, 0.2, 0.5, 0.75, 1.0],
     #         "min_child_weight": [1, 3, 5],
     #         "gamma": [0, 0.1, 0.2]
     #     }
@@ -99,11 +99,13 @@ param_grids = {
 
 ### DATASET ###
 print("Loading imbalanced dataset...")
-df = pd.read_csv("C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset.csv")
+# df = pd.read_csv("C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset.csv")
+df = pd.read_csv("C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset.csv")
 
 # Caricamento del training set già bilanciato
 print("Loading resampled training set...")
-train_resampled = pd.read_csv('C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_07.csv')
+# train_resampled = pd.read_csv('C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_07.csv')
+train_resampled = pd.read_csv('C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\train_smote_07.csv')
 y_train_res = train_resampled["isFraud"]
 X_train_res = train_resampled.drop(columns=["isFraud"])
 
@@ -251,22 +253,19 @@ for name, cfg in param_grids.items():
     
     # Calcolo metriche
     print(f"Evaluating best model...")
-    
-    print(f"Confusion matrix: {confusion_matrix(y_test, y_pred)}")
-    print(f"[0,0]: {confusion_matrix(y_test, y_pred)[0,0]}")
-    print(f"[0,1]: {confusion_matrix(y_test, y_pred)[0,1]}")
-    print(f"[1,0]: {confusion_matrix(y_test, y_pred)[1,0]}")
-    print(f"[1,1]: {confusion_matrix(y_test, y_pred)[1,1]}")
+
+    cm = confusion_matrix(y_test, y_pred)
+    print(f"Confusion matrix:\n{cm}\n")
 
     metrics = {
         "Model": name,
         "Best Params": grid.best_params_,
         "Accuracy": accuracy_score(y_test, y_pred),
-        "Specificity": confusion_matrix(y_test, y_pred)[1,1] / (confusion_matrix(y_test, y_pred)[1,1] + confusion_matrix(y_test, y_pred)[1,0]),
+        "Specificity": cm[1,1] / (cm[1,1] + cm[1,0]),
         "Precision": precision_score(y_test, y_pred, average="weighted"),
         "Recall": recall_score(y_test, y_pred, average="weighted"),
         "F1-score": f1_score(y_test, y_pred, average="weighted"),
-        "Confusion Matrix": confusion_matrix(y_test, y_pred).tolist()
+        "Confusion Matrix": cm.tolist()
     }
     results.append(metrics)
 
