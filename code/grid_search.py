@@ -5,27 +5,27 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
+import constants as const
+
 
 ### CLASSIFICATORI ###
-# Decision Tree
-from sklearn.tree import DecisionTreeClassifier
-# Naïve Bayes
-from sklearn.naive_bayes import GaussianNB
+# # Decision Tree
+# from sklearn.tree import DecisionTreeClassifier
+# # Naïve Bayes
+# from sklearn.naive_bayes import GaussianNB
 # K-NN
 from sklearn.neighbors import KNeighborsClassifier
-# Random Forest
-from sklearn.ensemble import RandomForestClassifier
-# AdaBoost
-from sklearn.ensemble import AdaBoostClassifier
-# XGBoost
-from xgboost import XGBClassifier
+# # Random Forest
+# from sklearn.ensemble import RandomForestClassifier
+# # AdaBoost
+# from sklearn.ensemble import AdaBoostClassifier
+# # XGBoost
+# from xgboost import XGBClassifier
 
 
-### COSTANTI ###
-DIM_TRAIN = 0.75
-DIM_TEST = 0.25
-DIM_TRAIN_SMALL = 0.3
-DIM_TEST_SMALL = 0.7
+### TIMING ###
+now = datetime.datetime.now()
+print("\n--- Start of execution:", now.strftime("%Y-%m-%d %H:%M:%S"))
 
 
 ### INIZIALIZATION OPERATIONS ###
@@ -54,9 +54,13 @@ param_grids = {
         "model": KNeighborsClassifier(),
         "params": {
             "n_neighbors": [3, 5, 7, 11],
-            "weights": ["uniform", "distance"],
+            # "n_neighbors": [3],
+            # "weights": ["uniform", "distance"],
+            "weights": ["distance"],
             # "p": [1, 2],
+            "p": [1],
             # "algorithm": ["auto", "ball_tree", "kd_tree", "brute"]
+            "algorithm": ["auto"]
         }
     }
     # "RandomForest": {
@@ -77,7 +81,7 @@ param_grids = {
     #     "params": {
     #         "n_estimators": [50, 100, 200],
     #         "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0],
-    #         "algorithm": ["SAMME", "SAMME.R"]
+    #         "algorithm": ["SAMME"]
     #     }
     # }
     # "XGBoost": {
@@ -109,7 +113,7 @@ y = df["isFraud"]
 # -------------------- Train/Test split --------------------
 print("Splitting data into train and test sets...")
 _, X_test, _, y_test = train_test_split(
-    X, y, test_size=DIM_TEST, random_state=42, stratify=y
+    X, y, test_size=const.DIM_TEST, random_state=42, stratify=y
 )
 
 # Caricamento del training set già bilanciato
@@ -122,7 +126,7 @@ X_train_res = train_resampled.drop(columns=["isFraud"])
 # Riduzione del training set già bilanciato per la GridSearch (per trovare i migliori ipermarametri per ogni modello)
 print("Reducing balanced training set for GridSearch...")
 X_train_res_small, _, y_train_res_small, _ = train_test_split(
-    X_train_res, y_train_res, train_size=DIM_TRAIN_SMALL, stratify=y_train_res, random_state=42
+    X_train_res, y_train_res, train_size=const.DIM_TRAIN_SMALL, stratify=y_train_res, random_state=42
 )
 
 
@@ -136,7 +140,7 @@ for name, cfg in param_grids.items():
     print(f"\nModel: {name}")
     
     print("Instantiating grid for GridSearch...")
-    grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="accuracy", n_jobs=4, verbose=2)
+    grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="f1", n_jobs=4, verbose=2)
     
     print(f"Finding best hyper-parameters (on small rebalanced training set)...")
     grid.fit(X_train_res_small, y_train_res_small)
@@ -144,10 +148,10 @@ for name, cfg in param_grids.items():
     best_model = cfg["model"].set_params(**best_params)
     
     print("Training best model (on complete rebalanced training set)...")
-    best_model.fit(X_train_res, y_train_res)
+    best_model.fit(X_train_res, y_train_res, verbose=2)
 
     print(f"Testing best model (on imbalanced test set)...")
-    y_pred = best_model.predict(X_test)
+    y_pred = best_model.predict(X_test, verbose=2)
     
     # Calcolo metriche
     print(f"Evaluating best model...")
@@ -185,7 +189,7 @@ df_results = pd.DataFrame(results)
 
 # Salvo i risultati su un file CSV
 print("Saving results to CSV...")
-file_path = f"model_results/{name}_{DIM_TRAIN_SMALL*100}.csv"
+file_path = f"model_results/{name}_{const.DIM_TRAIN_SMALL*100}.csv"
 if os.path.exists(file_path):
     # Apro in append, senza scrivere l'header
     df_results.to_csv(file_path, mode='a', index=False, header=False)
@@ -199,4 +203,4 @@ print(df_results)
 
 ### TIMING ###
 now = datetime.datetime.now()
-print("\nEnd of execution:", now.strftime("%Y-%m-%d %H:%M:%S"))
+print("\n--- End of execution:", now.strftime("%Y-%m-%d %H:%M:%S"))

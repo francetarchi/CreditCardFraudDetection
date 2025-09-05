@@ -5,10 +5,7 @@ from sklearn.preprocessing import RobustScaler
 from imblearn.over_sampling import SMOTE              # ci serve a bilanciare i dati del training set, il nostro dataset è fortemente sbilanciato (ci sono pochissime transazioni fraudolente)
 from sklearn.model_selection import train_test_split
 
-
-### COSTANTI ###
-DIM_TEST = 0.25
-DIM_SMOTE = 1.0   # bilanciamento perfetto
+import constants as const
 
 
 ### DATASET ###
@@ -62,7 +59,7 @@ y = df["isFraud"]
 # -------------------- Train/Test split --------------------
 print("Splitting data into train and test sets...")
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=DIM_TEST, random_state=42, stratify=y
+    X, y, test_size=const.DIM_TEST, random_state=42, stratify=y
 )
 
 print("Applying SMOTE to balance the training set...")
@@ -83,5 +80,5 @@ print("Training set size after SMOTE: ", X_train_res.shape)
 # Salvo il dataset di training preprocessato bilanciato su un file CSV
 print("Saving preprocessed balanced training dataset to CSV...")
 # file_path = f"C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_{DIM_SMOTE*10}.csv"
-file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\train_smote_{DIM_SMOTE*10}.csv"
+file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\train_smote_{const.DIM_SMOTE*10}.csv"
 train_resampled.to_csv(file_path, index=False)
