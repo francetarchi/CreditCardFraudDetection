@@ -1,0 +1,2 @@
+Model,Best Params,Accuracy,Specificity,Precision,Recall,F1,Precision_weighted,Recall_weighted,F1_weighted,Balanced_Accuracy,Confusion Matrix
+RandomForest,"{'bootstrap': False, 'criterion': 'entropy', 'max_depth': None, 'max_leaf_nodes': None, 'max_samples': None, 'min_impurity_decrease': 0.0, 'min_samples_split': 2, 'n_estimators': 200}",0.9807024079655908,0.9984838807038724,0.9214259730811204,0.4903213317847464,0.6400505369551485,0.9797135536724516,0.9807024079655908,0.977837117393886,0.7444026062443094,"[[142253, 216], [2633, 2533]]"

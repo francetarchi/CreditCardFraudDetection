@@ -1,0 +1,2 @@
+Model,Best Params,Accuracy,Specificity,Precision,Recall,F1,Precision_weighted,Recall_weighted,F1_weighted,Balanced_Accuracy,Confusion Matrix
+DecisionTree,"{'criterion': 'log_loss', 'max_depth': None, 'max_leaf_nodes': None, 'min_samples_leaf': 1, 'min_samples_split': 5, 'splitter': 'best'}",0.9653943848003522,0.9803816970709417,0.5050469275721622,0.5520712349980643,0.5275131785813373,0.9669538625514773,0.9653943848003522,0.9661348160788631,0.7662264660345031,"[[139674, 2795], [2314, 2852]]"

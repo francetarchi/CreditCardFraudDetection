@@ -4,8 +4,6 @@ import os
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import RobustScaler
 from imblearn.over_sampling import SMOTE
-from sklearn.preprocessing import OneHotEncoder
-from category_encoders import TargetEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
@@ -37,17 +35,17 @@ DIM_TEST_SMALL = 0.7
 # Instanziazione dei modelli con relativi parametri
 print("Instantiating models...")
 param_grids = {
-    "DecisionTree": {
-        "model": DecisionTreeClassifier(),
-        "params": {
-            "max_depth": [3, 5, 10, None],
-            "min_samples_split": [2, 5, 10],
-            "criterion": ["gini", "entropy", "log_loss"],
-            "splitter": ["best", "random"],
-            "max_leaf_nodes": [None, 10, 20, 30],   
-            "min_samples_leaf": [1, 2, 5], 
-        }
-    }
+    # "DecisionTree": {
+    #     "model": DecisionTreeClassifier(),
+    #     "params": {
+    #         "max_depth": [3, 5, 10, None],
+    #         "min_samples_split": [2, 5, 10],
+    #         "criterion": ["gini", "entropy", "log_loss"],
+    #         "splitter": ["best", "random"],
+    #         "max_leaf_nodes": [None, 10, 20, 30],   
+    #         "min_samples_leaf": [1, 2, 5], 
+    #     }
+    # }
     # "NaiveBayes": {
     #     "model": GaussianNB(),
     #     "params": {
@@ -162,6 +160,7 @@ X = df.drop(columns=["TransactionID_x", "TransactionID_y", "isFraud"])
 y = df["isFraud"]
 
 
+
 # -------------------- Train/Test split --------------------
 print("Splitting data into train and test sets...")
 _, X_test, _, y_test = train_test_split(
@@ -196,7 +195,7 @@ for name, cfg in param_grids.items():
     print(f"\nModel: {name}")
     
     print("Instantiating grid for GridSearch...")
-    grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="accuracy", n_jobs=4, verbose=2)
+    grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="f1", n_jobs=4, verbose=2)
     
     print(f"Finding best hyper-parameters (on small rebalanced training set)...")
     grid.fit(X_train_res_small, y_train_res_small)
