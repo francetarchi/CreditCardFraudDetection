@@ -13,12 +13,12 @@ import constants as const
 # from sklearn.tree import DecisionTreeClassifier
 # # Naïve Bayes
 # from sklearn.naive_bayes import GaussianNB
-# # K-NN
-# from sklearn.neighbors import KNeighborsClassifier
+# K-NN
+from sklearn.neighbors import KNeighborsClassifier
 # # Random Forest
 # from sklearn.ensemble import RandomForestClassifier
-# AdaBoost
-from sklearn.ensemble import AdaBoostClassifier
+# # AdaBoost
+# from sklearn.ensemble import AdaBoostClassifier
 # # XGBoost
 # from xgboost import XGBClassifier
 
@@ -50,19 +50,19 @@ param_grids = {
     #         "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6] 
     #     }
     # }
-    # "KNN": {
-    #     "model": KNeighborsClassifier(),
-    #     "params": {
-    #         "n_neighbors": [3, 5, 7, 11],
-    #         # "n_neighbors": [3],
-    #         # "weights": ["uniform", "distance"],
-    #         "weights": ["distance"],
-    #         # "p": [1, 2],
-    #         "p": [1],
-    #         # "algorithm": ["auto", "ball_tree", "kd_tree", "brute"]
-    #         "algorithm": ["auto"]
-    #     }
-    # }
+    "KNN": {
+        "model": KNeighborsClassifier(),
+        "params": {
+            "n_neighbors": [3, 5, 7, 11],
+            # "n_neighbors": [3],
+            # "weights": ["uniform", "distance"],
+            "weights": ["distance"],
+            # "p": [1, 2],
+            "p": [1],
+            # "algorithm": ["auto", "ball_tree", "kd_tree", "brute"]
+            "algorithm": ["auto"]
+        }
+    }
     # "RandomForest": {
     #     "model": RandomForestClassifier(),
     #     "params": {
@@ -76,13 +76,13 @@ param_grids = {
     #         'bootstrap': [False, True]
     #     }
     # }
-    "AdaBoost": {
-        "model": AdaBoostClassifier(),
-        "params": {
-            "n_estimators": [50, 100, 200],
-            # "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
-        }
-    }
+    # "AdaBoost": {
+    #     "model": AdaBoostClassifier(),
+    #     "params": {
+    #         "n_estimators": [50, 100, 200],
+    #         # "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
+    #     }
+    # }
     # "XGBoost": {
     #     "model": XGBClassifier(use_label_encoder=False, eval_metric="logloss"),
     #     "params": {
@@ -147,10 +147,10 @@ for name, cfg in param_grids.items():
     best_model = cfg["model"].set_params(**best_params)
     
     print("Training best model (on complete rebalanced training set)...")
-    best_model.fit(X_train_res, y_train_res, verbose=2)
+    best_model.fit(X_train_res, y_train_res)
 
     print(f"Testing best model (on imbalanced test set)...")
-    y_pred = best_model.predict(X_test, verbose=2)
+    y_pred = best_model.predict(X_test)
     
     # Calcolo metriche
     print(f"Evaluating best model...")
