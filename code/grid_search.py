@@ -79,8 +79,10 @@ param_grids = {
     "AdaBoost": {
         "model": AdaBoostClassifier(),
         "params": {
-            "n_estimators": [50, 100, 200],
+            # "n_estimators": [50, 100, 200],
+            "n_estimators": [200],
             # "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
+            "learning_rate": [1.0]
         }
     }
     # "XGBoost": {
