@@ -35,63 +35,63 @@ DIM_TEST_SMALL = 0.7
 # Instanziazione dei modelli con relativi parametri
 print("Instantiating models...")
 param_grids = {
-    # "DecisionTree": {
-    #     "model": DecisionTreeClassifier(),
-    #     "params": {
-    #         "max_depth": [3, 5, 10, None],
-    #         "min_samples_split": [2, 5, 10],
-    #         "criterion": ["gini", "entropy", "log_loss"],
-    #         "splitter": ["best", "random"],
-    #         "max_leaf_nodes": [None, 10, 20, 30],   
-    #         "min_samples_leaf": [1, 2, 5], 
-    #     }
-    # }
-    # "NaiveBayes": {
-    #     "model": GaussianNB(),
-    #     "params": {
-    #         "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6] 
-    #     }
-    # },
-    # "KNN": {
-    #     "model": KNeighborsClassifier(),
-    #     "params": {
-    #         "n_neighbors": [3, 5, 7, 11],
-    #         "weights": ["uniform", "distance"],
-    #         "p": [1, 2],
-    #         "algorithm": ["auto", "ball_tree", "kd_tree", "brute"]
-    #     }
-    # },
-    # "RandomForest": {
-    #     "model": RandomForestClassifier(),
-    #     "params": {
-    #         "n_estimators": [50, 100, 200],
-    #         "max_depth": [5, 10, None],
-    #         "criterion": ['entropy', 'gini'],
-    #         'max_leaf_nodes':  [None, 10, 20, 30],
-    #         'max_samples': [None, 0.5, 0.9],
-    #         'min_samples_split': [2, 5, 10], 
-    #         'min_impurity_decrease': [0.0, 0.1, 0.2],
-    #         'bootstrap': [False, True]
-    #     }
-    # },
-    # "AdaBoost": {
-    #     "model": AdaBoostClassifier(),
-    #     "params": {
-    #         "n_estimators": [50, 100, 200],
-    #         "learning_rate": [0.01, 0.1, 0.5, 1.0],
-    #         "algorithm": ["SAMME", "SAMME.R"]
-    #     }
-    # },
-    # "XGBoost": {
-    #     "model": XGBClassifier(use_label_encoder=False, eval_metric="logloss"),
-    #     "params": {
-    #         "n_estimators": [50, 100, 200],
-    #         "max_depth": [3, 5, 7, 10],
-    #         "learning_rate": [0.01, 0.1, 0.2, 0.5, 1.0],
-    #         "min_child_weight": [1, 3, 5],
-    #         "gamma": [0, 0.1, 0.2]
-    #     }
-    # }
+    "DecisionTree": {
+        "model": DecisionTreeClassifier(),
+        "params": {
+            "max_depth": [3, 5, 10, None],
+            "min_samples_split": [2, 5, 10],
+            "criterion": ["gini", "entropy", "log_loss"],
+            "splitter": ["best", "random"],
+            "max_leaf_nodes": [None, 10, 20, 30],   
+            "min_samples_leaf": [1, 2, 5], 
+        }
+    },
+    "NaiveBayes": {
+        "model": GaussianNB(),
+        "params": {
+            "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6] 
+        }
+    },
+    "KNN": {
+        "model": KNeighborsClassifier(),
+        "params": {
+            "n_neighbors": [3, 5, 7, 11],
+            "weights": ["uniform", "distance"],
+            "p": [1, 2],
+            "algorithm": ["auto", "ball_tree", "kd_tree", "brute"]
+        }
+    },
+    "RandomForest": {
+        "model": RandomForestClassifier(),
+        "params": {
+            "n_estimators": [50, 100, 200],
+            "max_depth": [5, 10, None],
+            "criterion": ['entropy', 'gini'],
+            'max_leaf_nodes':  [None, 10, 20, 30],
+            'max_samples': [None, 0.5, 0.9],
+            'min_samples_split': [2, 5, 10], 
+            'min_impurity_decrease': [0.0, 0.1, 0.2],
+            'bootstrap': [False, True]
+        }
+    },
+    "AdaBoost": {
+        "model": AdaBoostClassifier(),
+        "params": {
+            "n_estimators": [50, 100, 200],
+            "learning_rate": [0.01, 0.1, 0.5, 1.0],
+            "algorithm": ["SAMME", "SAMME.R"]
+        }
+    },
+    "XGBoost": {
+        "model": XGBClassifier(),
+        "params": {
+            "n_estimators": [50, 100, 200],
+            "max_depth": [3, 5, 7, 10],
+            "learning_rate": [0.01, 0.1, 0.2, 0.5, 1.0],
+            "min_child_weight": [1, 3, 5],
+            "gamma": [0, 0.1, 0.2]
+        }
+    }
 }
 
 
