@@ -4,6 +4,8 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import RobustScaler
 from imblearn.over_sampling import SMOTE              # ci serve a bilanciare i dati del training set, il nostro dataset è fortemente sbilanciato (ci sono pochissime transazioni fraudolente)
 from sklearn.model_selection import train_test_split
+# from sklearn.pipeline import Pipeline
+# from sklearn.compose import ColumnTransformer
 
 import constants as const
 
@@ -82,3 +84,34 @@ print("Saving preprocessed balanced training dataset to CSV...")
 file_path = f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_{const.DIM_SMOTE*10}.csv"
 # file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\train_smote_{const.DIM_SMOTE*10}.csv"
 train_resampled.to_csv(file_path, index=False)
+
+
+# # Funzioni per preprocessare nuovi dati (ad es. per fare predizioni con il modello addestrato)
+# # Lista delle colonne numeriche (senza target)
+# NUM_COLS = [col for col in X.columns if col not in ["isFraud"]]
+
+# # Pipeline numerica: imputazione + scaling
+# numeric_pipeline = Pipeline([
+#     ('imputer', SimpleImputer(strategy="mean")),
+#     ('scaler', RobustScaler())
+# ])
+
+# # Colonne temporali da creare
+# TEMP_COLS = ['TransactionDT']
+
+# def add_temporal_features(df):
+#     df = df.copy()
+#     df["hour"] = (df["TransactionDT"] // 3600) % 24
+#     df["dayofweek"] = (df["TransactionDT"] // (24*3600)) % 7
+#     df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)
+#     df["hour_cos"] = np.cos(2 * np.pi * df["hour"] / 24)
+#     df["dayofweek_sin"] = np.sin(2 * np.pi * df["dayofweek"] / 7)
+#     df["dayofweek_cos"] = np.cos(2 * np.pi * df["dayofweek"] / 7)
+#     df = df.drop(columns=["TransactionDT", "hour", "dayofweek"])
+#     return df
+
+# # Funzione pipeline finale da importare
+# def preprocessing_pipeline(df):
+#     df = add_temporal_features(df)
+#     df[NUM_COLS] = numeric_pipeline.fit_transform(df[NUM_COLS])
+#     return df

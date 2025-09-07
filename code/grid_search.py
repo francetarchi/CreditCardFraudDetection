@@ -10,18 +10,18 @@ import constants as const
 
 
 ### CLASSIFICATORI ###
-# # Decision Tree
-# from sklearn.tree import DecisionTreeClassifier
-# # Naïve Bayes
-# from sklearn.naive_bayes import GaussianNB
-# # K-NN
-# from sklearn.neighbors import KNeighborsClassifier
-# # Random Forest
-# from sklearn.ensemble import RandomForestClassifier
+# Decision Tree
+from sklearn.tree import DecisionTreeClassifier
+# Naïve Bayes
+from sklearn.naive_bayes import GaussianNB
+# K-NN
+from sklearn.neighbors import KNeighborsClassifier
+# Random Forest
+from sklearn.ensemble import RandomForestClassifier
 # AdaBoost
 from sklearn.ensemble import AdaBoostClassifier
-# # XGBoost
-# from xgboost import XGBClassifier
+# XGBoost
+from xgboost import XGBClassifier
 
 
 ### TIMING ###
@@ -64,19 +64,19 @@ param_grids = {
     #         "algorithm": ["auto"]
     #     }
     # }
-    # "RandomForest": {
-    #     "model": RandomForestClassifier(random_state=42),
-    #     "params": {
-    #         "n_estimators": [50, 100, 200],
-    #         "max_depth": [5, 10, None],
-    #         "criterion": ['entropy', 'gini'],
-    #         'max_leaf_nodes':  [None, 10, 20, 30],
-    #         'max_samples': [None, 0.5, 0.9],
-    #         'min_samples_split': [2, 5, 10], 
-    #         'min_impurity_decrease': [0.0, 0.1, 0.2],
-    #         'bootstrap': [False, True]
-    #     }
-    # }
+    "RandomForest": {
+        "model": RandomForestClassifier(random_state=42),
+        "params": {
+            "n_estimators": [200],
+            "max_depth": [None],
+            "criterion": ['entropy', 'gini'],
+            'max_leaf_nodes':  [None, 10, 20, 30],
+            # 'max_samples': [None, 0.5, 0.9],
+            # 'min_samples_split': [2, 5, 10], 
+            # 'min_impurity_decrease': [0.0, 0.1, 0.2],
+            # 'bootstrap': [False, True]
+        }
+    }
     # "AdaBoost": {
     #     "model": AdaBoostClassifier(random_state=42),
     #     "params": {
@@ -118,7 +118,7 @@ _, X_test, _, y_test = train_test_split(
 
 # Caricamento del training set già bilanciato
 print("Loading balanced preprocessed training set...")
-train_resampled = pd.read_csv('C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_10.csv')
+train_resampled = pd.read_csv('C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_05.csv')
 # train_resampled = pd.read_csv('C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\train_smote_10.csv')
 y_train_res = train_resampled["isFraud"]
 X_train_res = train_resampled.drop(columns=["isFraud"])
@@ -140,7 +140,7 @@ for name, cfg in param_grids.items():
     print(f"\nModel: {name}")
     
     print("Instantiating grid for GridSearch...")
-    grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="f1", n_jobs=-1, verbose=2)
+    grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="f1", n_jobs=1, verbose=2)
     
     print(f"Finding best hyper-parameters (on small rebalanced training set)...")
     grid.fit(X_train_res_small, y_train_res_small)
