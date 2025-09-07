@@ -3,7 +3,8 @@ import datetime
 import pandas as pd
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_auc_score, average_precision_score
+import joblib
 
 import constants as const
 
@@ -34,7 +35,7 @@ print("\nINIZIALIZING OPERATIONS:")
 print("Instantiating models...")
 param_grids = {
     # "DecisionTree": {
-    #     "model": DecisionTreeClassifier(),
+    #     "model": DecisionTreeClassifier(random_state=42),
     #     "params": {
     #         "max_depth": [3, 5, 10, None],
     #         "min_samples_split": [2, 5, 10],
@@ -64,7 +65,7 @@ param_grids = {
     #     }
     # }
     # "RandomForest": {
-    #     "model": RandomForestClassifier(),
+    #     "model": RandomForestClassifier(random_state=42),
     #     "params": {
     #         "n_estimators": [50, 100, 200],
     #         "max_depth": [5, 10, None],
@@ -76,17 +77,15 @@ param_grids = {
     #         'bootstrap': [False, True]
     #     }
     # }
-    "AdaBoost": {
-        "model": AdaBoostClassifier(),
-        "params": {
-            # "n_estimators": [50, 100, 200],
-            "n_estimators": [200],
-            # "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
-            "learning_rate": [1.0]
-        }
-    }
+    # "AdaBoost": {
+    #     "model": AdaBoostClassifier(random_state=42),
+    #     "params": {
+    #         "n_estimators": [50, 100, 200],
+    #         "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
+    #     }
+    # }
     # "XGBoost": {
-    #     "model": XGBClassifier(use_label_encoder=False, eval_metric="logloss"),
+    #     "model": XGBClassifier(random_state=42),
     #     "params": {
     #         "n_estimators": [50, 100, 200],
     #         "max_depth": [3, 5, 7, 10],
@@ -102,8 +101,8 @@ param_grids = {
 print("\nDATASETS LOADING:")
 # Caricamento del dataset grezzo
 print("Loading imbalanced preprocessed dataset...")
-# df = pd.read_csv("C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset_preprocessed.csv")
-df = pd.read_csv("C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset_preprocessed.csv")
+df = pd.read_csv("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset_preprocessed.csv")
+# df = pd.read_csv("C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset_preprocessed.csv")
 
 # -------------------- X e y --------------------
 print("Creating feature matrix (X) and target vector (y)...")
@@ -119,8 +118,8 @@ _, X_test, _, y_test = train_test_split(
 
 # Caricamento del training set già bilanciato
 print("Loading balanced preprocessed training set...")
-# train_resampled = pd.read_csv('C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_10.csv')
-train_resampled = pd.read_csv('C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\train_smote_10.csv')
+train_resampled = pd.read_csv('C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_10.csv')
+# train_resampled = pd.read_csv('C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\train_smote_10.csv')
 y_train_res = train_resampled["isFraud"]
 X_train_res = train_resampled.drop(columns=["isFraud"])
 
@@ -153,6 +152,7 @@ for name, cfg in param_grids.items():
 
     print(f"Testing best model (on imbalanced test set)...")
     y_pred = best_model.predict(X_test)
+    y_pred_proba = best_model.predict_proba(X_test)[:, 1]
     
     # Calcolo metriche
     print(f"Evaluating best model...")
@@ -178,28 +178,41 @@ for name, cfg in param_grids.items():
         "Recall_weighted": recall_score(y_test, y_pred, average="weighted"),
         "F1_weighted": f1_score(y_test, y_pred, average="weighted"),
         "Balanced_Accuracy": (specificity + sensitivity) / 2,
+        "ROC_AUC": roc_auc_score(y_test, y_pred_proba),
+        "PR_AUC": average_precision_score(y_test, y_pred_proba),
         "Confusion Matrix": cm.tolist(),
     }
     results.append(metrics)
 
+    ### RESULTS ###
+    print("\nRESULTS:")
+    # Creo un DataFrame con i risultati
+    df_results = pd.DataFrame(results)
 
-### RESULTS ###
-print("\nRESULTS:")
-# Creo un DataFrame con i risultati
-df_results = pd.DataFrame(results)
+    # Salvo i risultati su un file CSV
+    print("Saving results to CSV...")
+    file_path = f"model_results/{name}_{const.DIM_TRAIN_SMALL*100}.csv"
+    if os.path.exists(file_path):
+        # Apro in append, senza scrivere l'header
+        df_results.to_csv(file_path, mode='a', index=False, header=False)
+    else:
+        # Se non esiste, scrivo normalmente con header
+        df_results.to_csv(file_path, index=False)
 
-# Salvo i risultati su un file CSV
-print("Saving results to CSV...")
-file_path = f"model_results/{name}_{const.DIM_TRAIN_SMALL*100}.csv"
-if os.path.exists(file_path):
-    # Apro in append, senza scrivere l'header
-    df_results.to_csv(file_path, mode='a', index=False, header=False)
-else:
-    # Se non esiste, scrivo normalmente con header
-    df_results.to_csv(file_path, index=False)
+    # Mostro i risultati a schermo
+    print(df_results)
 
-# Mostro i risultati a schermo
-print(df_results)
+    # Percorso OneDrive
+    onedrive_dir = r"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models"
+    # onedrive_dir = r"C:\\Users\\franc\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models"
+
+    # Creo la cartella se non esiste
+    os.makedirs(onedrive_dir, exist_ok=True)
+
+    # Salvo il modello migliore in un file pickle
+    path = os.path.join(onedrive_dir, f"{name}.pkl")
+    joblib.dump(best_model, path)
+    print(f"{name} salvato in {path}")
 
 
 ### TIMING ###

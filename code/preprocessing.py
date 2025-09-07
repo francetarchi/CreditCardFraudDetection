@@ -10,8 +10,8 @@ import constants as const
 
 ### DATASET ###
 print("Loading imbalanced dataset...")
-# df = pd.read_csv("C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset.csv")
-df = pd.read_csv("C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset.csv")
+df = pd.read_csv("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset.csv")
+# df = pd.read_csv("C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset.csv")
 
 
 ### PREPROCESSING ###
@@ -43,8 +43,8 @@ df[num_cols] = scaler.fit_transform(df[num_cols])
 
 # Salvo il dataset preprocessato su un file CSV
 print("Saving preprocessed dataset to CSV...")
-# file_path = "C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset_preprocessed.csv"
-file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset_preprocessed.csv"
+file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset_preprocessed.csv"
+# file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset_preprocessed.csv"
 df.to_csv(file_path, index=False)
 
 # -------------------- SMOTE -------------------- #
@@ -79,6 +79,6 @@ print("Training set size after SMOTE: ", X_train_res.shape)
 
 # Salvo il dataset di training preprocessato bilanciato su un file CSV
 print("Saving preprocessed balanced training dataset to CSV...")
-# file_path = f"C:\\Users\\berte\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_{DIM_SMOTE*10}.csv"
-file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\train_smote_{const.DIM_SMOTE*10}.csv"
+file_path = f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_{const.DIM_SMOTE*10}.csv"
+# file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\train_smote_{const.DIM_SMOTE*10}.csv"
 train_resampled.to_csv(file_path, index=False)
