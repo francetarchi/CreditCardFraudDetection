@@ -69,12 +69,12 @@ param_grids = {
         "params": {
             "n_estimators": [200],
             "max_depth": [None],
-            "criterion": ['entropy', 'gini'],
-            'max_leaf_nodes':  [None, 10, 20, 30],
-            # 'max_samples': [None, 0.5, 0.9],
-            # 'min_samples_split': [2, 5, 10], 
-            # 'min_impurity_decrease': [0.0, 0.1, 0.2],
-            # 'bootstrap': [False, True]
+            "criterion": ['gini'],
+            'max_leaf_nodes':  [None],
+            'max_samples': [None],
+            'min_samples_split': [2], 
+            'min_impurity_decrease': [0.0],
+            'bootstrap': [False]
         }
     }
     # "AdaBoost": {
@@ -101,7 +101,7 @@ param_grids = {
 print("\nDATASETS LOADING:")
 # Caricamento del dataset grezzo
 print("Loading imbalanced preprocessed dataset...")
-df = pd.read_csv("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset_preprocessed.csv")
+df = pd.read_csv("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\Old dataset\\dataset_preprocessed.csv")
 # df = pd.read_csv("C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset_preprocessed.csv")
 
 # -------------------- X e y --------------------
@@ -118,7 +118,7 @@ _, X_test, _, y_test = train_test_split(
 
 # Caricamento del training set già bilanciato
 print("Loading balanced preprocessed training set...")
-train_resampled = pd.read_csv('C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_05.csv')
+train_resampled = pd.read_csv('C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\Old dataset\\train_smote_10.csv')
 # train_resampled = pd.read_csv('C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\train_smote_10.csv')
 y_train_res = train_resampled["isFraud"]
 X_train_res = train_resampled.drop(columns=["isFraud"])
