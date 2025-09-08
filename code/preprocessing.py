@@ -1,19 +1,19 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import RobustScaler
 from imblearn.over_sampling import SMOTE              # ci serve a bilanciare i dati del training set, il nostro dataset è fortemente sbilanciato (ci sono pochissime transazioni fraudolente)
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import VarianceThreshold, SelectPercentile, f_classif, mutual_info_classif, SelectKBest
-import constants as const
 
 import constants as const
 
 
 # -------------------- DATASET --------------------
 print("Loading imbalanced dataset...")
-df = pd.read_csv("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset.csv")
-# df = pd.read_csv("C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset.csv")
+# df = pd.read_csv("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset.csv")
+df = pd.read_csv("C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset.csv")
 
 
 # -------------------- FEATURE ENGINEERING --------------------
@@ -65,7 +65,7 @@ X_test[num_cols] = scaler.transform(X_test[num_cols])
 # print(f"Selecting top {const.SELECT_PERCENTILE}% features...")
 
 # Variance Threshold
-var_thresh = VarianceThreshold(threshold=0.05)
+var_thresh = VarianceThreshold(threshold=const.VARIANCE_THRESHOLD)
 X_train_var = var_thresh.fit_transform(X_train)
 X_test_var = var_thresh.transform(X_test)
 
@@ -84,45 +84,79 @@ X_test_sel = selector.transform(X_test_var)
 
 # Mantengo i nomi delle feature selezionate
 selected_features = remaining_cols[selector.get_support()]
-X_train = pd.DataFrame(X_train_sel, columns=selected_features, index=y_train.index)
-X_test = pd.DataFrame(X_test_sel, columns=selected_features, index=y_test.index)
+X_train = pd.DataFrame(np.asarray(X_train_sel), columns=selected_features, index=y_train.index)
+X_test = pd.DataFrame(np.asarray(X_test_sel), columns=selected_features, index=y_test.index)
 
-# Salvo le feature selezionate
-selected_features.to_series().to_csv(
-    "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\selected_features.csv",
-    index=False
-)
+# Unisco X e y in un unico DataFrame (separatamente fra training e testing)
+prep_train = X_train.copy()
+prep_train["isFraud"] = y_train
+prep_test = X_test.copy()
+prep_test["isFraud"] = y_test
+
+# Salvo i risultati intermedi del preprocessing in un file csv
+print("Saving intermediate training dataset to CSV...")
+# file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\intermediate_prep_train.csv"
+file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\intermediate_prep_train.csv"
+prep_train.to_csv(file_path, index=False)
+
+print("Saving intermediate testing dataset to CSV...")
+# file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\intermediate_prep_test.csv"
+file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\intermediate_prep_test.csv"
+prep_test.to_csv(file_path, index=False)
+
+# Plot degli score di Mutual Information (non ci sono p-value con MI)
+mi_scores = np.nan_to_num(selector.scores_)  # garantisce niente NaN
+order = np.argsort(mi_scores)                # dal più basso al più alto
+ordered_scores = mi_scores[order]
+indices = np.arange(len(ordered_scores))
+
+plt.bar(indices, ordered_scores, width=0.8)
+plt.title("Feature Mutual Information scores (ordered)")
+plt.xlabel("Feature rank")
+plt.ylabel("MI score")
+plt.tight_layout()
+plt.show()
 
 
 # -------------------- SMOTE --------------------
 # SMOTE ci serve per bilanciare i dati del training set: il nostro dataset è fortemente sbilanciato (ci sono pochissime transazioni fraudolente).
 print("Applying SMOTE to balance the training set...")
-smote = SMOTE(random_state=42, sampling_strategy=const.DIM_SMOTE)
-X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
+smote = SMOTE(random_state=42, sampling_strategy="auto")
+X_train_res, y_train_res, *_ = smote.fit_resample(X_train, y_train)
 
 # Unisco X e y in un unico DataFrame
-train_resampled = X_train_res.copy()
-train_resampled["isFraud"] = y_train_res
-train_resampled.to_csv("train_smote_.csv", index=False)
+smote_prep_train = X_train_res.copy()
+smote_prep_train["isFraud"] = y_train_res
 
-print("Prima di SMOTE:", y_train.value_counts())
-print("Dopo SMOTE:", y_train_res.value_counts())
-
+# Stampo a video le stats prima e dopo SMOTE
 print("Training set size before SMOTE: ", X_train.shape)
 print("Training set size after SMOTE: ", X_train_res.shape)
+print("Label array size before SMOTE:", y_train.value_counts())
+print("Label array size after SMOTE:", y_train_res.value_counts())
 
 
-# Salvo il dataset preprocessato su un file CSV
-print("Saving preprocessed dataset to CSV...")
-file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset_preprocessed.csv"
-# file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset_preprocessed.csv"
-df.to_csv(file_path, index=False)
 
+# --------------------- SAVING TO CSV ---------------------
+# Salvo il dataset di training preprocessato su un file CSV
+print("Saving preprocessed training dataset to CSV...")
+# file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_train.csv"
+file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_train.csv"
+prep_train.to_csv(file_path, index=False)
+
+# Salvo il dataset di testing preprocessato su un file CSV
+print("Saving preprocessed testing dataset to CSV...")
+# file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_test.csv"
+file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_test.csv"
+prep_test.to_csv(file_path, index=False)
 
 # Salvo il dataset di training preprocessato bilanciato su un file CSV
-print("Saving preprocessed balanced training dataset to CSV...")
-file_path = f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\train_smote_{const.DIM_SMOTE*10}.csv"
-# file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\train_smote_{const.DIM_SMOTE*10}.csv"
-train_resampled.to_csv(file_path, index=False)
+print("Saving balanced preprocessed training dataset to CSV...")
+# file_path = f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote_prep_train.csv"
+file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\smote_prep_train.csv"
+smote_prep_train.to_csv(file_path, index=False)
 
-
+# Salvo le feature selezionate
+print("Saving selected features to CSV...")
+# file_path = f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\selected_features.csv"
+file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\selected_features.csv"
+selected_features.to_series().to_csv(file_path, index=False)

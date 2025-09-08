@@ -7,5 +7,5 @@ DIM_TEST_SMALL = 0.7
 
 DIM_SMOTE = 1.0   # bilanciamento perfetto
 
-VARIANCE_THRESHOLD = 0.01  # soglia per la rimozione delle feature a bassa varianza
+VARIANCE_THRESHOLD = 0.05  # soglia per la rimozione delle feature a bassa varianza
 SELECT_PERCENTILE = 20  # percentuale di feature da mantenere in feature selection
