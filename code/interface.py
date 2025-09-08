@@ -1,9 +1,9 @@
-import streamlit as st
+import shap
 import joblib
 import pandas as pd
-from sklearn.model_selection import train_test_split
-import shap
+import streamlit as st
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
 
 import constants as const
 
@@ -111,4 +111,3 @@ if st.button("Predict"):
                 "Label": ["Fraudulent" if l==1 else "Legitimate" for l in neighbor_labels]
             }))
             st.write(f"La transazione è stata classificata come **{results[name]}** perché {sum(neighbor_labels)} dei 3 vicini erano Fraudulent.")
-

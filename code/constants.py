@@ -6,3 +6,5 @@ DIM_TRAIN_SMALL = 0.3
 DIM_TEST_SMALL = 0.7
 
 DIM_SMOTE = 1.0   # bilanciamento perfetto
+
+VARIANCE_THRESHOLD = 0.01  # soglia per la rimozione delle feature a bassa varianza
