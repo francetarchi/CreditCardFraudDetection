@@ -78,7 +78,7 @@ def mi_score(X, y):
     return mutual_info_classif(X, y, discrete_features=discrete_mask, random_state=42)
 
 # Seleziono le migliori k
-selector = SelectKBest(score_func=mi_score, k=100)
+selector = SelectKBest(score_func=mi_score, k=120)
 X_train_sel = selector.fit_transform(X_train_var, y_train)
 X_test_sel = selector.transform(X_test_var)
 
