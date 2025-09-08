@@ -49,7 +49,7 @@ num_cols = X.select_dtypes(include=np.number).columns.tolist()
 
 # -------------------- IMPUTATION --------------------
 print("Applying imputer...")
-imputer = SimpleImputer(strategy="mean")
+imputer = SimpleImputer(strategy="median")
 X_train[num_cols] = imputer.fit_transform(X_train[num_cols])
 X_test[num_cols] = imputer.transform(X_test[num_cols])
 
