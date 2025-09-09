@@ -3,9 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import RobustScaler
-from imblearn.over_sampling import SMOTE              # ci serve a bilanciare i dati del training set, il nostro dataset è fortemente sbilanciato (ci sono pochissime transazioni fraudolente)
+from imblearn.over_sampling import SMOTE
 from sklearn.model_selection import train_test_split
-from sklearn.feature_selection import VarianceThreshold, SelectPercentile, f_classif, mutual_info_classif, SelectKBest
+from sklearn.feature_selection import VarianceThreshold, mutual_info_classif, SelectKBest
 
 import constants as const
 
