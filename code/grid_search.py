@@ -35,7 +35,7 @@ print("\nINIZIALIZING OPERATIONS:")
 print("Instantiating models...")
 param_grids = {
     # "DecisionTree": {
-    #     "model": DecisionTreeClassifier(random_state=42),
+    #     "model": DecisionTreeClassifier(random_state=const.RANDOM_STATE),
     #     "params": {
     #         "max_depth": [3, 5, 10, None],
     #         "min_samples_split": [2, 5, 10],
@@ -61,7 +61,7 @@ param_grids = {
     #     }
     # }
     # "RandomForest": {
-    #     "model": RandomForestClassifier(random_state=42),
+    #     "model": RandomForestClassifier(random_state=const.RANDOM_STATE),
     #     "params": {
     #         "n_estimators": [50, 100, 200],
     #         "max_depth": [5, 10, None],
@@ -74,14 +74,14 @@ param_grids = {
     #     }
     # }
     "AdaBoost": {
-        "model": AdaBoostClassifier(random_state=42),
+        "model": AdaBoostClassifier(random_state=const.RANDOM_STATE),
         "params": {
             "n_estimators": [200],
             "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
         }
     }
     # "XGBoost": {
-    #     "model": XGBClassifier(random_state=42),
+    #     "model": XGBClassifier(random_state=const.RANDOM_STATE),
     #     "params": {
     #         "n_estimators": [50, 100, 200],
     #         "max_depth": [3, 5, 7, 10],
@@ -118,7 +118,7 @@ X_test = test_set.drop(columns=["isFraud"])
 # Riduzione del training set già bilanciato per la GridSearch (per trovare i migliori ipermarametri per ogni modello)
 print("Reducing balanced training set for GridSearch...")
 X_train_res_small, _, y_train_res_small, _ = train_test_split(
-    X_train_res, y_train_res, train_size=const.DIM_TRAIN_SMALL, stratify=y_train_res, random_state=42
+    X_train_res, y_train_res, train_size=const.DIM_TRAIN_SMALL, stratify=y_train_res, random_state=const.RANDOM_STATE
 )
 
 
