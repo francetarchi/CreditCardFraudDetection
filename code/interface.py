@@ -22,7 +22,7 @@ df = pd.read_csv("C:\\Users\\vale\\OneDrive - University of Pisa\\File di France
 X = df.drop(columns=["isFraud"])
 y = df["isFraud"]
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=const.DIM_TEST, random_state=42, stratify=y
+    X, y, test_size=const.DIM_TEST, random_state=const.RANDOM_STATE, stratify=y
 )
 
 # Mostro 5 transazioni del test set

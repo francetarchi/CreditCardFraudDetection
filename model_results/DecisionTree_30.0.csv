@@ -1,2 +1,0 @@
-Model,Best Params,Accuracy,Specificity,Precision,Recall,F1,Precision_weighted,Recall_weighted,F1_weighted,Balanced_Accuracy,ROC_AUC,PR_AUC,Confusion Matrix
-DecisionTree,"{'criterion': 'entropy', 'max_depth': None, 'max_leaf_nodes': None, 'min_samples_leaf': 1, 'min_samples_split': 5, 'splitter': 'best'}",0.9617096217021709,0.9785427005173055,0.45672649724542386,0.49748354626403407,0.47623459649773003,0.9633489463907415,0.9617096217021709,0.9624963425499696,0.7380131233906698,0.7526458907822744,0.26777204212767336,"[[139412, 3057], [2596, 2570]]"
