@@ -51,15 +51,15 @@ param_grids = {
     #         "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6] 
     #     }
     # }
-    "KNN": {
-        "model": KNeighborsClassifier(),
-        "params": {
-            "n_neighbors": [3, 5, 7, 11],
-            "weights": ["distance"],
-            "p": [1],
-            "algorithm": ["auto"]
-        }
-    }
+    # "KNN": {
+    #     "model": KNeighborsClassifier(),
+    #     "params": {
+    #         "n_neighbors": [3, 5, 7, 11],
+    #         "weights": ["distance"],
+    #         "p": [1],
+    #         "algorithm": ["auto"]
+    #     }
+    # }
     # "RandomForest": {
     #     "model": RandomForestClassifier(random_state=42),
     #     "params": {
@@ -73,13 +73,13 @@ param_grids = {
     #         "bootstrap": [False, True]
     #     }
     # }
-    # "AdaBoost": {
-    #     "model": AdaBoostClassifier(random_state=42),
-    #     "params": {
-    #         "n_estimators": [50, 100, 200],
-    #         "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
-    #     }
-    # }
+    "AdaBoost": {
+        "model": AdaBoostClassifier(random_state=42),
+        "params": {
+            "n_estimators": [200],
+            "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
+        }
+    }
     # "XGBoost": {
     #     "model": XGBClassifier(random_state=42),
     #     "params": {
@@ -98,7 +98,7 @@ print("\nDATASETS LOADING:")
 # Caricamento del training set preprocessato e bilanciato con SMOTE
 print("Loading balanced preprocessed training set...")
 train_resampled = pd.read_csv(
-    "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote_prep_train.csv"
+    "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\Nuova cartella\\smote_prep_train.csv"
     # "C:\\Users\\franc\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote_prep_train.csv"
 )
 y_train_res = train_resampled["isFraud"]
@@ -108,7 +108,7 @@ X_train_res = train_resampled.drop(columns=["isFraud"])
 # Caricamento del test set preprocessato (sbilanciato)
 print("Loading preprocessed testing set...")
 test_set = pd.read_csv(
-    "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_test.csv"
+    "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\Nuova cartella\\prep_test.csv"
     # "C:\\Users\\franc\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_test.csv"
 )
 y_test = test_set["isFraud"]
