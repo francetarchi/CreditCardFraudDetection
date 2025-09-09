@@ -12,8 +12,8 @@ import constants as const
 
 # -------------------- DATASET --------------------
 print("Loading imbalanced dataset...")
-# df = pd.read_csv("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset.csv")
-df = pd.read_csv("C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset.csv")
+df = pd.read_csv("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset.csv")
+# df = pd.read_csv("C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset.csv")
 
 
 # -------------------- FEATURE ENGINEERING --------------------
@@ -95,13 +95,13 @@ prep_test["isFraud"] = y_test
 
 # Salvo i risultati intermedi del preprocessing in un file csv
 print("Saving intermediate training dataset to CSV...")
-# file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\intermediate_prep_train.csv"
-file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\intermediate_prep_train.csv"
+file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\intermediate_prep_train.csv"
+# file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\intermediate_prep_train.csv"
 prep_train.to_csv(file_path, index=False)
 
 print("Saving intermediate testing dataset to CSV...")
-# file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\intermediate_prep_test.csv"
-file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\intermediate_prep_test.csv"
+file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\intermediate_prep_test.csv"
+# file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\intermediate_prep_test.csv"
 prep_test.to_csv(file_path, index=False)
 
 # Plot degli score di Mutual Information (non ci sono p-value con MI)
@@ -139,24 +139,24 @@ print("Label array size after SMOTE:", y_train_res.value_counts())
 # --------------------- SAVING TO CSV ---------------------
 # Salvo il dataset di training preprocessato su un file CSV
 print("Saving preprocessed training dataset to CSV...")
-# file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_train.csv"
-file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_train.csv"
+file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_train.csv"
+# file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_train.csv"
 prep_train.to_csv(file_path, index=False)
 
 # Salvo il dataset di testing preprocessato su un file CSV
 print("Saving preprocessed testing dataset to CSV...")
-# file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_test.csv"
-file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_test.csv"
+file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_test.csv"
+# file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_test.csv"
 prep_test.to_csv(file_path, index=False)
 
 # Salvo il dataset di training preprocessato bilanciato su un file CSV
 print("Saving balanced preprocessed training dataset to CSV...")
-# file_path = f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote_prep_train.csv"
-file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\smote_prep_train.csv"
+file_path = f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote_prep_train.csv"
+# file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\smote_prep_train.csv"
 smote_prep_train.to_csv(file_path, index=False)
 
 # Salvo le feature selezionate
 print("Saving selected features to CSV...")
-# file_path = f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\selected_features.csv"
-file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\selected_features.csv"
+file_path = f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\selected_features.csv"
+# file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\selected_features.csv"
 selected_features.to_series().to_csv(file_path, index=False)

@@ -51,32 +51,28 @@ param_grids = {
     #         "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6] 
     #     }
     # }
-    # "KNN": {
-    #     "model": KNeighborsClassifier(),
-    #     "params": {
-    #         # "n_neighbors": [3, 5, 7, 11],
-    #         "n_neighbors": [3],
-    #         # "weights": ["uniform", "distance"],
-    #         "weights": ["distance"],
-    #         # "p": [1, 2],
-    #         "p": [1],
-    #         # "algorithm": ["auto", "ball_tree", "kd_tree", "brute"]
-    #         "algorithm": ["auto"]
-    #     }
-    # }
-    "RandomForest": {
-        "model": RandomForestClassifier(random_state=42),
+    "KNN": {
+        "model": KNeighborsClassifier(),
         "params": {
-            "n_estimators": [200],
-            "max_depth": [None],
-            "criterion": ['gini'],
-            'max_leaf_nodes':  [None],
-            'max_samples': [None],
-            'min_samples_split': [2], 
-            'min_impurity_decrease': [0.0],
-            'bootstrap': [False]
+            "n_neighbors": [3, 5, 7, 11],
+            "weights": ["distance"],
+            "p": [1],
+            "algorithm": ["auto"]
         }
     }
+    # "RandomForest": {
+    #     "model": RandomForestClassifier(random_state=42),
+    #     "params": {
+    #         "n_estimators": [50, 100, 200],
+    #         "max_depth": [5, 10, None],
+    #         "criterion": ['entropy', 'gini'],
+    #         'max_leaf_nodes':  [None, 10, 20, 30],
+    #         'max_samples': [None, 0.5, 0.9],
+    #         'min_samples_split': [2, 5, 10], 
+    #         'min_impurity_decrease': [0.0, 0.1, 0.2],
+    #         "bootstrap": [False, True]
+    #     }
+    # }
     # "AdaBoost": {
     #     "model": AdaBoostClassifier(random_state=42),
     #     "params": {
@@ -99,29 +95,25 @@ param_grids = {
 
 ### DATASET ###
 print("\nDATASETS LOADING:")
-# Caricamento del dataset grezzo
-print("Loading imbalanced preprocessed dataset...")
-df = pd.read_csv("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\Old dataset\\dataset_preprocessed.csv")
-# df = pd.read_csv("C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset_preprocessed.csv")
-
-# -------------------- X e y --------------------
-print("Creating feature matrix (X) and target vector (y)...")
-X = df.drop(columns=["TransactionID_x", "TransactionID_y", "isFraud"])
-y = df["isFraud"]
-
-
-# -------------------- Train/Test split --------------------
-print("Splitting data into train and test sets...")
-_, X_test, _, y_test = train_test_split(
-    X, y, test_size=const.DIM_TEST, random_state=42, stratify=y
-)
-
-# Caricamento del training set già bilanciato
+# Caricamento del training set preprocessato e bilanciato con SMOTE
 print("Loading balanced preprocessed training set...")
-train_resampled = pd.read_csv('C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\Old dataset\\train_smote_10.csv')
-# train_resampled = pd.read_csv('C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\train_smote_10.csv')
+train_resampled = pd.read_csv(
+    "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote_prep_train.csv"
+    # "C:\\Users\\franc\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote_prep_train.csv"
+)
 y_train_res = train_resampled["isFraud"]
 X_train_res = train_resampled.drop(columns=["isFraud"])
+
+
+# Caricamento del test set preprocessato (sbilanciato)
+print("Loading preprocessed testing set...")
+test_set = pd.read_csv(
+    "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_test.csv"
+    # "C:\\Users\\franc\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_test.csv"
+)
+y_test = test_set["isFraud"]
+X_test = test_set.drop(columns=["isFraud"])
+
 
 # Riduzione del training set già bilanciato per la GridSearch (per trovare i migliori ipermarametri per ogni modello)
 print("Reducing balanced training set for GridSearch...")
@@ -140,7 +132,7 @@ for name, cfg in param_grids.items():
     print(f"\nModel: {name}")
     
     print("Instantiating grid for GridSearch...")
-    grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="f1", n_jobs=1, verbose=2)
+    grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="f1", n_jobs=-1, verbose=2)
     
     print(f"Finding best hyper-parameters (on small rebalanced training set)...")
     grid.fit(X_train_res_small, y_train_res_small)
