@@ -1,0 +1,2 @@
+Model,Best Params,Accuracy,Specificity,Precision,Recall,F1,Precision_weighted,Recall_weighted,F1_weighted,Balanced_Accuracy,ROC_AUC,PR_AUC,Confusion Matrix
+KNN,"{'algorithm': 'auto', 'n_neighbors': 3, 'p': 1, 'weights': 'distance'}",0.9627188674772242,0.9760790066610983,0.4739117011423279,0.5942702284165698,0.5273102026794916,0.9672621420029749,0.9627188674772242,0.964732985252797,0.7851746175388341,0.8245536449090444,0.42572520998546626,"[[139061, 3408], [2096, 3070]]"

@@ -58,37 +58,37 @@ param_grids = {
     #         "var_smoothing": [1e-7]
     #     }
     # }
-    "KNN": {
-        "model": KNeighborsClassifier(),
-        "params": {
-            "n_neighbors": [3, 5, 7, 11],
-            # "n_neighbors": [3, 5, 7, 11],
-            "weights": ["distance"],
-            "p": [1],
-            "algorithm": ["auto"]
-        }
-    }
-    # "RandomForest": {
-    #     "model": RandomForestClassifier(random_state=const.RANDOM_STATE),
+    # "KNN": {
+    #     "model": KNeighborsClassifier(),
     #     "params": {
-    #         "n_estimators": [50, 100, 200],
-    #         "n_estimators": [50, 100, 200],
-    #         "max_depth": [5, 10, None],
-    #         "max_depth": [5, 10, None],
-    #         "criterion": ['entropy', 'gini'],
-    #         "criterion": ['entropy', 'gini'],
-    #         'max_leaf_nodes':  [None, 10, 20, 30],
-    #         'max_leaf_nodes':  [None, 10, 20, 30],
-    #         'max_samples': [None, 0.5, 0.9],
-    #         'max_samples': [None, 0.5, 0.9],
-    #         'min_samples_split': [2, 5, 10], 
-    #         'min_samples_split': [2, 5, 10], 
-    #         'min_impurity_decrease': [0.0, 0.1, 0.2],
-    #         'min_impurity_decrease': [0.0, 0.1, 0.2],
-    #         "bootstrap": [False, True]
-    #         "bootstrap": [False, True]
+    #         # "n_neighbors": [3, 5, 7, 11],
+    #         "n_neighbors": [3],
+    #         "weights": ["distance"],
+    #         "p": [1],
+    #         "algorithm": ["auto"]
     #     }
     # }
+    "RandomForest": {
+        "model": RandomForestClassifier(random_state=const.RANDOM_STATE),
+        "params": {
+            # "n_estimators": [50, 100, 200],
+            "n_estimators": [200],
+            # "max_depth": [5, 10, None],
+            "max_depth": [None],
+            # "criterion": ['entropy', 'gini'],
+            "criterion": ['gini'],
+            # 'max_leaf_nodes':  [None, 10, 20, 30],
+            'max_leaf_nodes':  [None],
+            # 'max_samples': [None, 0.5, 0.9],
+            'max_samples': [None],
+            # 'min_samples_split': [2, 5, 10], 
+            'min_samples_split': [2],
+            # 'min_impurity_decrease': [0.0, 0.1, 0.2],
+            'min_impurity_decrease': [0.0],
+            # "bootstrap": [False, True]
+            "bootstrap": [False]
+        }
+    }
     # "AdaBoost": {
     #     "model": AdaBoostClassifier(random_state=const.RANDOM_STATE),
     #     "params": {
@@ -138,13 +138,6 @@ y_test = test_set["isFraud"]
 X_test = test_set.drop(columns=["isFraud"])
 
 
-# # Riduzione del training set già bilanciato per la GridSearch (per trovare i migliori ipermarametri per ogni modello)
-# print("Reducing balanced training set for GridSearch...")
-# X_train_res_small, _, y_train_res_small, _ = train_test_split(
-#     X_train_res, y_train_res, train_size=const.DIM_TRAIN_SMALL, stratify=y_train_res, random_state=const.RANDOM_STATE
-# )
-
-
 ### TRAINING AND TESTING ###
 print("\nTRAINING AND TESTING:")
 # Addestramento e valutazione dei modelli
@@ -158,13 +151,8 @@ for name, cfg in param_grids.items():
     grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="f1", n_jobs=-1, verbose=2)
     
     print(f"Finding best hyper-parameters (on small rebalanced training set)...")
-    # grid.fit(X_train_res_small, y_train_res_small)
     grid.fit(X_train_res, y_train_res)
-    best_params = grid.best_params_
-    best_model = cfg["model"].set_params(**best_params)
-    
-    print("Training best model (on complete rebalanced training set)...")
-    best_model.fit(X_train_res, y_train_res)
+    best_model = grid.best_estimator_
 
     print(f"Testing best model (on imbalanced test set)...")
     y_pred = best_model.predict(X_test)
