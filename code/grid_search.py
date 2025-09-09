@@ -37,18 +37,25 @@ param_grids = {
     # "DecisionTree": {
     #     "model": DecisionTreeClassifier(random_state=const.RANDOM_STATE),
     #     "params": {
-    #         "max_depth": [3, 5, 10, None],
-    #         "min_samples_split": [2, 5, 10],
-    #         "criterion": ["gini", "entropy", "log_loss"],
-    #         "splitter": ["best", "random"],
-    #         "max_leaf_nodes": [None, 10, 20, 30],
-    #         "min_samples_leaf": [1, 2, 5]
+    #         # "max_depth": [3, 5, 10, None],
+    #         "max_depth": [None],
+    #         # "min_samples_split": [2, 5, 10],
+    #         "min_samples_split": [5],
+    #         # "criterion": ["gini", "entropy", "log_loss"],
+    #         "criterion": ["entropy"],
+    #         # "splitter": ["best", "random"],
+    #         "splitter": ["best"],
+    #         # "max_leaf_nodes": [None, 10, 20, 30],
+    #         "max_leaf_nodes": [None],
+    #         # "min_samples_leaf": [1, 2, 5]
+    #         "min_samples_leaf": [1]
     #     }
     # }
     # "NaiveBayes": {
     #     "model": GaussianNB(),
     #     "params": {
-    #         "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6] 
+    #         # "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6] 
+    #         "var_smoothing": [1e-7]
     #     }
     # }
     # "KNN": {
@@ -64,12 +71,20 @@ param_grids = {
     #     "model": RandomForestClassifier(random_state=const.RANDOM_STATE),
     #     "params": {
     #         "n_estimators": [50, 100, 200],
+    #         "n_estimators": [50, 100, 200],
+    #         "max_depth": [5, 10, None],
     #         "max_depth": [5, 10, None],
     #         "criterion": ['entropy', 'gini'],
+    #         "criterion": ['entropy', 'gini'],
+    #         'max_leaf_nodes':  [None, 10, 20, 30],
     #         'max_leaf_nodes':  [None, 10, 20, 30],
     #         'max_samples': [None, 0.5, 0.9],
+    #         'max_samples': [None, 0.5, 0.9],
+    #         'min_samples_split': [2, 5, 10], 
     #         'min_samples_split': [2, 5, 10], 
     #         'min_impurity_decrease': [0.0, 0.1, 0.2],
+    #         'min_impurity_decrease': [0.0, 0.1, 0.2],
+    #         "bootstrap": [False, True]
     #         "bootstrap": [False, True]
     #     }
     # }
@@ -84,9 +99,14 @@ param_grids = {
     #     "model": XGBClassifier(random_state=const.RANDOM_STATE),
     #     "params": {
     #         "n_estimators": [50, 100, 200],
+    #         "n_estimators": [50, 100, 200],
+    #         "max_depth": [3, 5, 7, 10],
     #         "max_depth": [3, 5, 7, 10],
     #         "learning_rate": [0.01, 0.1, 0.2, 0.5, 0.75, 1.0],
+    #         "learning_rate": [0.01, 0.1, 0.2, 0.5, 0.75, 1.0],
     #         "min_child_weight": [1, 3, 5],
+    #         "min_child_weight": [1, 3, 5],
+    #         "gamma": [0, 0.1, 0.2]
     #         "gamma": [0, 0.1, 0.2]
     #     }
     # }
@@ -98,8 +118,8 @@ print("\nDATASETS LOADING:")
 # Caricamento del training set preprocessato e bilanciato con SMOTE
 print("Loading balanced preprocessed training set...")
 train_resampled = pd.read_csv(
-    "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\Nuova cartella\\smote_prep_train.csv"
-    # "C:\\Users\\franc\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote_prep_train.csv"
+    # f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote20.0_prep_train.csv"
+    f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\smote{const.TARGET_MINORITY_RATIO_1_5*100}_prep_train.csv"
 )
 y_train_res = train_resampled["isFraud"]
 X_train_res = train_resampled.drop(columns=["isFraud"])
@@ -108,18 +128,18 @@ X_train_res = train_resampled.drop(columns=["isFraud"])
 # Caricamento del test set preprocessato (sbilanciato)
 print("Loading preprocessed testing set...")
 test_set = pd.read_csv(
-    "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\Nuova cartella\\prep_test.csv"
-    # "C:\\Users\\franc\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_test.csv"
+    # "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_test.csv"
+    "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_test.csv"
 )
 y_test = test_set["isFraud"]
 X_test = test_set.drop(columns=["isFraud"])
 
 
-# Riduzione del training set già bilanciato per la GridSearch (per trovare i migliori ipermarametri per ogni modello)
-print("Reducing balanced training set for GridSearch...")
-X_train_res_small, _, y_train_res_small, _ = train_test_split(
-    X_train_res, y_train_res, train_size=const.DIM_TRAIN_SMALL, stratify=y_train_res, random_state=const.RANDOM_STATE
-)
+# # Riduzione del training set già bilanciato per la GridSearch (per trovare i migliori ipermarametri per ogni modello)
+# print("Reducing balanced training set for GridSearch...")
+# X_train_res_small, _, y_train_res_small, _ = train_test_split(
+#     X_train_res, y_train_res, train_size=const.DIM_TRAIN_SMALL, stratify=y_train_res, random_state=const.RANDOM_STATE
+# )
 
 
 ### TRAINING AND TESTING ###
@@ -135,7 +155,8 @@ for name, cfg in param_grids.items():
     grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="f1", n_jobs=-1, verbose=2)
     
     print(f"Finding best hyper-parameters (on small rebalanced training set)...")
-    grid.fit(X_train_res_small, y_train_res_small)
+    # grid.fit(X_train_res_small, y_train_res_small)
+    grid.fit(X_train_res, y_train_res)
     best_params = grid.best_params_
     best_model = cfg["model"].set_params(**best_params)
     
@@ -183,7 +204,7 @@ for name, cfg in param_grids.items():
 
     # Salvo i risultati su un file CSV
     print("Saving results to CSV...")
-    file_path = f"model_results/{name}_{const.DIM_TRAIN_SMALL*100}.csv"
+    file_path = f"model_results/{name}_{const.TARGET_MINORITY_RATIO_1_5*100}.csv"
     if os.path.exists(file_path):
         # Apro in append, senza scrivere l'header
         df_results.to_csv(file_path, mode='a', index=False, header=False)
@@ -195,8 +216,8 @@ for name, cfg in param_grids.items():
     print(df_results)
 
     # Percorso OneDrive
-    onedrive_dir = r"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models"
-    # onedrive_dir = r"C:\\Users\\franc\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models"
+    # onedrive_dir = f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\smote{const.TARGET_MINORITY_RATIO_1_5*100}"
+    onedrive_dir = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Trained models\\smote{const.TARGET_MINORITY_RATIO_1_5*100}"
 
     # Creo la cartella se non esiste
     os.makedirs(onedrive_dir, exist_ok=True)
