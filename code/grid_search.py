@@ -139,7 +139,6 @@ print("\nTRAINING AND TESTING:")
 # Addestramento e valutazione dei modelli
 print("Training and evaluating models...")
 results = []
-name = ""
 for name, cfg in param_grids.items():
     print(f"\nModel: {name}")
     
@@ -184,24 +183,23 @@ for name, cfg in param_grids.items():
     }
     results.append(metrics)
 
-
     ### RESULTS ###
     print("\nRESULTS:")
     # Creo un DataFrame con i risultati
-    df_results = pd.DataFrame(results)
+    df_metrics = pd.DataFrame(metrics)
 
     # Salvo i risultati su un file CSV
     print("Saving results to CSV...")
     file_path = f"model_results/{name}_{const.TARGET_MINORITY_RATIO_1_5*100}.csv"
     if os.path.exists(file_path):
         # Apro in append, senza scrivere l'header
-        df_results.to_csv(file_path, mode='a', index=False, header=False)
+        df_metrics.to_csv(file_path, mode='a', index=False, header=False)
     else:
         # Se non esiste, scrivo normalmente con header
-        df_results.to_csv(file_path, index=False)
+        df_metrics.to_csv(file_path, index=False)
 
     # Mostro i risultati a schermo
-    print(df_results)
+    print(df_metrics)
 
     # Creo la cartella se non esiste
     os.makedirs(SMOTE_DIRECTORY_PATH, exist_ok=True)
@@ -211,6 +209,12 @@ for name, cfg in param_grids.items():
     joblib.dump(best_model, path)
     print(f"{name} salvato in {path}")
 
+
+# Creo un DataFrame unico con tutti i risultati
+df_results = pd.DataFrame(results)
+
+# Memorizzo tutti i risultati in un unico file CSV
+df_results.to_csv("model_results/unique.csv", index=False)
 
 ### TIMING ###
 now = datetime.datetime.now()
