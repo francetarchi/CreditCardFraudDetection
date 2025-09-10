@@ -30,26 +30,25 @@ for name, path in model_paths.items():
 tot = len(models)
 print(f"  --> Models loaded: {list(models.keys())} (total: {tot})")
 
-# # Generazione e salvataggio delle predizioni per tutti i modelli
-# i = 1
-# y_pred = {}
-# print("Generating predictions for all models...")
-# for model_name, model in models.items():
-#     print(f"  --> Processing predictions for {model_name}...")
+# Generazione e salvataggio delle predizioni per tutti i modelli
+i = 1
+y_pred = {}
+print("Generating predictions for all models...")
+for model_name, model in models.items():
+    print(f"  --> Processing predictions for {model_name}...")
 
-#     # Probabilità della classe positiva
-#     y_pred[model_name] = model.predict_proba(X_test)[:, 1]
-#     print(f"  --> Predictions done for {model_name} ({i}/{tot}).")
+    # Probabilità della classe positiva
+    y_pred[model_name] = model.predict_proba(X_test)[:, 1]
+    print(f"  --> Predictions done for {model_name} ({i}/{tot}).")
 
-#     i += 1
+    i += 1
+print("Saving predictions to CSV...")
+predictions_df = pd.DataFrame(y_pred)
+predictions_df.to_csv(paths.PREDICTIONS_PATH, index=False)
 
-# print("Saving predictions to CSV...")
-# predictions_df = pd.DataFrame(y_pred)
-# predictions_df.to_csv(paths.PREDICTIONS_PATH, index=False)
-
-# Caricamento delle predizioni salvate
-print("Loading saved predictions...")
-y_pred = pd.read_csv(paths.PREDICTIONS_PATH).to_dict(orient='list')
+# # Caricamento delle predizioni salvate
+# print("Loading saved predictions...")
+# y_pred = pd.read_csv(paths.PREDICTIONS_PATH).to_dict(orient='list')
 
 # Caricamento delle statistiche dei modelli
 print("Loading model statistics...")
@@ -78,8 +77,8 @@ for index, row in model_stats.iterrows():
     plt.clf()
 
 # Plot ROC curves
-print("Plotting ROC curves...")
 i = 1
+print("Plotting ROC curves...")
 for model_name, model in models.items():
     print(f"  --> Processing ROC for {model_name}...")
     
@@ -99,9 +98,51 @@ plt.legend()
 plt.savefig('graphs/ROC_comparison.png')
 plt.clf()
 
-# Plot Precision-Recall curves
-print("Plotting Precision-Recall curves...")
+#Plot thresholds vs TPR
 i = 1
+print("Plotting thresholds vs TPR...")
+for model_name, model in models.items():
+    print(f"  --> Extracting thresholds for {model_name}...")
+
+    # ROC
+    _, tpr, thresholds = roc_curve(y_test, y_pred[model_name])
+
+    plt.plot(thresholds, tpr, label='TPR', color='blue') # type: ignore
+    print(f"  --> Thresholds extracted for {model_name}.")
+
+    i += 1
+plt.figure(figsize=(10, 6))
+plt.xlabel("Thresholds")
+plt.ylabel("Rate")
+plt.title("Thresholds vs TPR")
+plt.legend()
+plt.savefig('graphs/Thresholds_TPR.png')
+plt.clf()
+
+# Plot thresholds vs FPR
+i = 1
+print("Plotting thresholds vs FPR...")
+for model_name, model in models.items():
+    print(f"  --> Extracting thresholds for {model_name}...")
+
+    # ROC
+    fpr, _, thresholds = roc_curve(y_test, y_pred[model_name])
+
+    plt.plot(thresholds, fpr, label='FPR', color='red') # type: ignore
+    print(f"  --> Thresholds extracted for {model_name}.")
+
+    i += 1
+plt.figure(figsize=(10, 6))
+plt.xlabel("Thresholds")
+plt.ylabel("Rate")
+plt.title("Thresholds vs FPR")
+plt.legend()
+plt.savefig('graphs/Thresholds_FPR.png')
+plt.clf()
+
+# Plot Precision-Recall curves
+i = 1
+print("Plotting Precision-Recall curves...")
 for model_name, model in models.items():
     print(f"  --> Processing PR for {model_name}...")
     
