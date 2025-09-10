@@ -143,7 +143,7 @@ for name, cfg in param_grids.items():
     print(f"\nModel: {name}")
     
     print("Instantiating grid for GridSearch...")
-    grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="f1", n_jobs=-1, verbose=2)
+    grid = GridSearchCV(cfg["model"], cfg["params"], cv=10, scoring="f1", n_jobs=-1, verbose=2)
     
     print(f"Finding best hyper-parameters (on small rebalanced training set)...")
     grid.fit(X_train_res, y_train_res)
