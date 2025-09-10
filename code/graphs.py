@@ -17,6 +17,7 @@ X_test = test_set.drop(columns=["isFraud"])
 
 # Caricamento dei modelli salvati
 print("Loading trained models...")
+models = {}
 model_paths = {
     "KNN": f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Trained models\\smote20.0\\KNN.pkl",
     "NB": f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Trained models\\smote20.0\\NaiveBayes.pkl",
@@ -25,9 +26,23 @@ model_paths = {
     "ADA": f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Trained models\\smote20.0\\AdaBoost.pkl",
     "XGB": f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Trained models\\smote20.0\\XGBoost.pkl"
 }
-models = {}
+
 for name, path in model_paths.items():
     models[name] = joblib.load(path)
+tot = len(models)
+print("  --> Models loaded:", list(models.keys()), " (total: ", tot, ")")
+
+i = 1
+y_pred = {}
+print("Generating predictions for all models...")
+for model_name, model in models.items():
+    print(f"  --> Processing predictions for {model_name}...")
+
+    # Probabilità della classe positiva
+    y_pred[model_name] = model.predict_proba(X_test)[:, 1]
+    print(f"\r  --> Predictions done for {model_name} ({i}/{tot}).")
+
+    i += 1
 
 # Caricamento delle statistiche dei modelli
 print("Loading model statistics...")
@@ -57,15 +72,18 @@ for index, row in model_stats.iterrows():
 
 # Plot ROC curves
 print("Plotting ROC curves...")
+i = 1
 for model_name, model in models.items():
-    # Probabilità della classe positiva
-    y_pred = model.predict_proba(X_test)[:, 1]
+    print(f"  --> Processing ROC for {model_name}...")
     
     # ROC
-    fpr, tpr, _ = roc_curve(y_test, y_pred)
+    fpr, tpr, _ = roc_curve(y_test, y_pred[model_name])
     roc_auc = auc(fpr, tpr)
     
     plt.plot(fpr, tpr, label=f"{model_name} (AUC = {roc_auc:.2f})")
+    print(f"\r  --> ROC plotted for {model_name} ({i}/{tot}).")
+    
+    i += 1
 plt.plot([0,1], [0,1], "--", color="gray")
 plt.xlabel("FPR")
 plt.ylabel("TPR")
@@ -76,15 +94,18 @@ plt.clf()
 
 # Plot Precision-Recall curves
 print("Plotting Precision-Recall curves...")
+i = 1
 for model_name, model in models.items():
-    # Probabilità della classe positiva
-    y_pred = model.predict_proba(X_test)[:, 1]
+    print(f"  --> Processing PR for {model_name}...")
     
     # PR
-    precision, recall, _ = precision_recall_curve(y_test, y_pred)
-    pr_auc = average_precision_score(y_test, y_pred)
-    
+    precision, recall, _ = precision_recall_curve(y_test, y_pred[model_name])
+    pr_auc = average_precision_score(y_test, y_pred[model_name])
+
     plt.plot(recall, precision, label=f"{model_name} (AUC = {pr_auc:.2f})")
+    print(f"\r  --> PR plotted for {model_name} ({i}/{tot}).")
+    
+    i += 1
 plt.xlabel("Recall")
 plt.ylabel("Precision")
 plt.title("Precision-Recall Curves comparison")
