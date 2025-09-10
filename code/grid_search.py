@@ -5,6 +5,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_auc_score, average_precision_score
 import joblib
 
+import paths
 import constants as const
 
 
@@ -117,22 +118,18 @@ param_grids = {
 
 ### DATASET ###
 print("\nDATASETS LOADING:")
+SMOTE_PREP_TRAIN_PATH = paths.SMOTE20_PREP_TRAIN_PATH
+SMOTE_DIRECTORY_PATH = paths.SMOTE20_DIRECTORY_PATH
+
 # Caricamento del training set preprocessato (bilanciato al 20% con SMOTE)
 print("Loading balanced preprocessed training set...")
-train_resampled = pd.read_csv(
-    # f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote{const.TARGET_MINORITY_RATIO_1_5*100}_prep_train.csv"
-    f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\smote{const.TARGET_MINORITY_RATIO_1_5*100}_prep_train.csv"
-)
+train_resampled = pd.read_csv(SMOTE_PREP_TRAIN_PATH)
 y_train_res = train_resampled["isFraud"]
 X_train_res = train_resampled.drop(columns=["isFraud"])
 
-
 # Caricamento del test set preprocessato (sbilanciato)
 print("Loading preprocessed testing set...")
-test_set = pd.read_csv(
-    # "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_test.csv"
-    "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_test.csv"
-)
+test_set = pd.read_csv(paths.PREP_TEST_PATH)
 y_test = test_set["isFraud"]
 X_test = test_set.drop(columns=["isFraud"])
 
@@ -206,15 +203,11 @@ for name, cfg in param_grids.items():
     # Mostro i risultati a schermo
     print(df_results)
 
-    # Percorso OneDrive
-    # onedrive_dir = f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\smote{const.TARGET_MINORITY_RATIO_1_5*100}"
-    onedrive_dir = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Trained models\\smote{const.TARGET_MINORITY_RATIO_1_5*100}"
-
     # Creo la cartella se non esiste
-    os.makedirs(onedrive_dir, exist_ok=True)
+    os.makedirs(SMOTE_DIRECTORY_PATH, exist_ok=True)
 
     # Salvo il modello migliore in un file pickle
-    path = os.path.join(onedrive_dir, f"{name}.pkl")
+    path = os.path.join(SMOTE_DIRECTORY_PATH, f"{name}.pkl")
     joblib.dump(best_model, path)
     print(f"{name} salvato in {path}")
 

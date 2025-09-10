@@ -2,19 +2,21 @@ import joblib
 import pandas as pd
 import matplotlib.pyplot as plt
 
+import paths
+
 # Carico dataset preprocessato solo per avere le colonne
-df = pd.read_csv("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset_preprocessed.csv")
+df = pd.read_csv(paths.PREP_ALL_PATH)
 X = df.drop(columns=["isFraud"])
 features = X.columns
 
 # Carico i modelli
 models = {
-    "Random Forest": joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\RandomForest.pkl"),
-    "Decision Tree": joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\DecisionTree.pkl"),
-    "AdaBoost": joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\AdaBoost.pkl"),
-    "XGBoost": joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\XGBoost.pkl"),
-    "KNN": joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\KNN.pkl"),
-    "Gaussian NB": joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\GaussianNB.pkl")
+    "KNN": joblib.load(paths.KNN_PATH),
+    "Gaussian NB": joblib.load(paths.NB_PATH),
+    "Decision Tree": joblib.load(paths.DT_PATH),
+    "Random Forest": joblib.load(paths.RF_PATH),
+    "AdaBoost": joblib.load(paths.ADA_PATH),
+    "XGBoost": joblib.load(paths.XGB_PATH)
 }
 
 # Loop sui modelli che hanno feature_importances_

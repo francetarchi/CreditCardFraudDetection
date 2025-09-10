@@ -5,19 +5,20 @@ import streamlit as st
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 
+import paths
 import constants as const
 
 # Carico i modelli salvati
-model_rf = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\RandomForest.pkl")
-model_dt = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\DecisionTree.pkl")
-model_nb = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\GaussianNB.pkl")
-model_knn = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\KNN.pkl")
-model_ab = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\AdaBoost.pkl")
-model_xgb = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\XGBoost.pkl")
+model_rf = joblib.load(paths.RF_PATH)
+model_dt = joblib.load(paths.DT_PATH)
+model_nb = joblib.load(paths.NB_PATH)
+model_knn = joblib.load(paths.KNN_PATH)
+model_ada = joblib.load(paths.ADA_PATH)
+model_xgb = joblib.load(paths.XGB_PATH)
 
 st.title("Credit Card Fraud Detection")
 
-df = pd.read_csv("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset_preprocessed.csv")
+df = pd.read_csv(paths.PREP_ALL_PATH)
 
 X = df.drop(columns=["isFraud"])
 y = df["isFraud"]
@@ -44,7 +45,7 @@ if st.button("Predict"):
         "Decision Tree": model_dt,
         "Gaussian NB": model_nb,
         "KNN": model_knn,
-        "AdaBoost": model_ab
+        "AdaBoost": model_ada
     }
 
     # Predizioni

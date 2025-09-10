@@ -7,13 +7,13 @@ from imblearn.over_sampling import SMOTE
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import VarianceThreshold, mutual_info_classif, SelectKBest
 
+import paths
 import constants as const
 
 
 # -------------------- DATASET --------------------
 print("Loading imbalanced dataset...")
-# df = pd.read_csv("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset.csv")
-df = pd.read_csv("C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset.csv")
+df = pd.read_csv(paths.RAW_ALL_PATH)
 
 
 # -------------------- FEATURE ENGINEERING --------------------
@@ -93,17 +93,6 @@ prep_train["isFraud"] = y_train
 prep_test = X_test.copy()
 prep_test["isFraud"] = y_test
 
-# # Salvo i risultati intermedi del preprocessing in un file csv
-# print("Saving intermediate training dataset to CSV...")
-# # file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\intermediate_prep_train.csv"
-# file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\intermediate_prep_train.csv"
-# prep_train.to_csv(file_path, index=False)
-
-# print("Saving intermediate testing dataset to CSV...")
-# # file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\intermediate_prep_test.csv"
-# file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\intermediate_prep_test.csv"
-# prep_test.to_csv(file_path, index=False)
-
 # Plot degli score di Mutual Information (non ci sono p-value con MI)
 mi_scores = np.nan_to_num(selector.scores_)  # garantisce niente NaN
 order = np.argsort(mi_scores)                # dal più basso al più alto
@@ -119,9 +108,11 @@ plt.show()
 
 
 # -------------------- SMOTE --------------------
+SAMPLING_STRATEGY = const.TARGET_MINORITY_RATIO_1_5
+SMOTED_TRAIN_PATH = paths.SMOTE20_PREP_TRAIN_PATH
+
 # SMOTE ci serve per bilanciare i dati del training set: il nostro dataset è fortemente sbilanciato (ci sono pochissime transazioni fraudolente).
 print("Applying SMOTE to balance the training set...")
-SAMPLING_STRATEGY = const.TARGET_MINORITY_RATIO_1_5
 smote = SMOTE(random_state=const.RANDOM_STATE, sampling_strategy=SAMPLING_STRATEGY) # type: ignore
 X_train_res, y_train_res = smote.fit_resample(X_train, y_train) # type: ignore[arg-type]
 
@@ -140,24 +131,16 @@ print("Label array size after SMOTE:", y_train_res.value_counts())
 # --------------------- SAVING TO CSV ---------------------
 # Salvo il dataset di training preprocessato su un file CSV
 print("Saving preprocessed training dataset to CSV...")
-# file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_train.csv"
-file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_train.csv"
-prep_train.to_csv(file_path, index=False)
+prep_train.to_csv(paths.PREP_TRAIN_PATH, index=False)
 
 # Salvo il dataset di testing preprocessato su un file CSV
 print("Saving preprocessed testing dataset to CSV...")
-# file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_test.csv"
-file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_test.csv"
-prep_test.to_csv(file_path, index=False)
+prep_test.to_csv(paths.PREP_TEST_PATH, index=False)
 
 # Salvo il dataset di training preprocessato bilanciato su un file CSV
 print("Saving balanced preprocessed training dataset to CSV...")
-# file_path = f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote{SAMPLING_STRATEGY*100}_prep_train.csv"
-file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\smote{SAMPLING_STRATEGY*100}_prep_train.csv"
-smote_prep_train.to_csv(file_path, index=False)
+smote_prep_train.to_csv(SMOTED_TRAIN_PATH, index=False)
 
 # Salvo le feature selezionate
 print("Saving selected features to CSV...")
-# file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\selected_features.csv"
-file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\selected_features.csv"
-selected_features.to_series().to_csv(file_path, index=False)
+selected_features.to_series().to_csv(paths.SELECTED_FEATURES_PATH, index=False)
