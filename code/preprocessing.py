@@ -148,8 +148,8 @@ selected_features.to_series().to_csv(paths.SELECTED_FEATURES_PATH, index=False)
 
 # Salvo oggetti di preprocessing già fittati
 print("Saving preprocessing objects...")
-joblib.dump(imputer, "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\imputer.pkl")
-joblib.dump(scaler, "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\scaler.pkl")
-joblib.dump(var_thresh, "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\var_thresh.pkl")
-joblib.dump(selector, "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\selector.pkl")
-joblib.dump(selected_features, "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\selected_features.pkl")
+joblib.dump(imputer, paths.IMPUTER_PATH)
+joblib.dump(scaler, paths.SCALER_PATH)
+joblib.dump(var_thresh, paths.VAR_THRESH_PATH)
+joblib.dump(selector, paths.SELECTOR_PATH)
+joblib.dump(selected_features, paths.SELECTED_FEATURES_PATH)
