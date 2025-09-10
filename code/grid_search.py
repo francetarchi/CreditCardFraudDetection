@@ -2,7 +2,6 @@ import os
 import datetime
 import pandas as pd
 from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_auc_score, average_precision_score
 import joblib
 
@@ -34,94 +33,94 @@ print("\nINIZIALIZING OPERATIONS:")
 # Instanziazione dei modelli con relativi parametri
 print("Instantiating models...")
 param_grids = {
-    # "DecisionTree": {
-    #     "model": DecisionTreeClassifier(random_state=const.RANDOM_STATE),
-    #     "params": {
-    #         # "max_depth": [3, 5, 10, None],
-    #         "max_depth": [None],
-    #         # "min_samples_split": [2, 5, 10],
-    #         "min_samples_split": [5],
-    #         # "criterion": ["gini", "entropy", "log_loss"],
-    #         "criterion": ["entropy"],
-    #         # "splitter": ["best", "random"],
-    #         "splitter": ["best"],
-    #         # "max_leaf_nodes": [None, 10, 20, 30],
-    #         "max_leaf_nodes": [None],
-    #         # "min_samples_leaf": [1, 2, 5]
-    #         "min_samples_leaf": [1]
-    #     }
-    # }
-    # "NaiveBayes": {
-    #     "model": GaussianNB(),
-    #     "params": {
-    #         # "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6] 
-    #         "var_smoothing": [1e-7]
-    #     }
-    # }
-    # "KNN": {
-    #     "model": KNeighborsClassifier(),
-    #     "params": {
-    #         # "n_neighbors": [3, 5, 7, 11],
-    #         "n_neighbors": [3],
-    #         "weights": ["distance"],
-    #         "p": [1],
-    #         "algorithm": ["auto"]
-    #     }
-    # }
+    "DecisionTree": {
+        "model": DecisionTreeClassifier(random_state=const.RANDOM_STATE),
+        "params": {
+            # "max_depth": [3, 5, 10, None],
+            # "min_samples_split": [2, 5, 10],
+            # "criterion": ["gini", "entropy", "log_loss"],
+            # "splitter": ["best", "random"],
+            # "max_leaf_nodes": [None, 10, 20, 30],
+            # "min_samples_leaf": [1, 2, 5]
+            "max_depth": [None],
+            "min_samples_split": [5],
+            "criterion": ["entropy"],
+            "splitter": ["best"],
+            "max_leaf_nodes": [None],
+            "min_samples_leaf": [1]
+        }
+    },
+    "NaiveBayes": {
+        "model": GaussianNB(),
+        "params": {
+            # "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6]
+            "var_smoothing": [1e-7]
+        }
+    },
+    "KNN": {
+        "model": KNeighborsClassifier(),
+        "params": {
+            # "n_neighbors": [3, 5, 7, 11],
+            "n_neighbors": [3],
+            "weights": ["distance"],
+            "p": [1],
+            "algorithm": ["auto"]
+        }
+    },
     "RandomForest": {
         "model": RandomForestClassifier(random_state=const.RANDOM_STATE),
         "params": {
-            # "n_estimators": [50, 100, 200],
-            "n_estimators": [200],
             # "max_depth": [5, 10, None],
-            "max_depth": [None],
+            # "n_estimators": [50, 100, 200],
             # "criterion": ['entropy', 'gini'],
-            "criterion": ['gini'],
             # 'max_leaf_nodes':  [None, 10, 20, 30],
-            'max_leaf_nodes':  [None],
             # 'max_samples': [None, 0.5, 0.9],
-            'max_samples': [None],
-            # 'min_samples_split': [2, 5, 10], 
-            'min_samples_split': [2],
+            # 'min_samples_split': [2, 5, 10],
             # 'min_impurity_decrease': [0.0, 0.1, 0.2],
-            'min_impurity_decrease': [0.0],
             # "bootstrap": [False, True]
+            "n_estimators": [200],
+            "max_depth": [None],
+            "criterion": ['gini'],
+            'max_leaf_nodes':  [None],
+            'max_samples': [None],
+            'min_samples_split': [2],
+            'min_impurity_decrease': [0.0],
             "bootstrap": [False]
         }
+    },
+    "AdaBoost": {
+        "model": AdaBoostClassifier(random_state=const.RANDOM_STATE),
+        "params": {
+            # "n_estimators": [50, 100, 200],
+            # "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
+            "n_estimators": [200],
+            "learning_rate": [1.0]
+        }
+    },
+    "XGBoost": {
+        "model": XGBClassifier(random_state=const.RANDOM_STATE),
+        "params": {
+            # "n_estimators": [50, 100, 200],
+            # "max_depth": [3, 5, 7, 10],
+            # "learning_rate": [0.01, 0.1, 0.2, 0.5, 0.75, 1.0],
+            # "min_child_weight": [1, 3, 5],
+            # "gamma": [0, 0.1, 0.2]
+            "n_estimators": [200],
+            "max_depth": [10],
+            "learning_rate": [0.75],
+            "min_child_weight": [1],
+            "gamma": [0]
+        }
     }
-    # "AdaBoost": {
-    #     "model": AdaBoostClassifier(random_state=const.RANDOM_STATE),
-    #     "params": {
-    #         "n_estimators": [50, 100, 200],
-    #         "n_estimators": [50, 100, 200],
-    #         "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
-    #         "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
-    #     }
-    # }
-    # "XGBoost": {
-    #     "model": XGBClassifier(random_state=const.RANDOM_STATE),
-    #     "params": {
-    #         "n_estimators": [50, 100, 200],
-    #         "n_estimators": [50, 100, 200],
-    #         "max_depth": [3, 5, 7, 10],
-    #         "max_depth": [3, 5, 7, 10],
-    #         "learning_rate": [0.01, 0.1, 0.2, 0.5, 0.75, 1.0],
-    #         "learning_rate": [0.01, 0.1, 0.2, 0.5, 0.75, 1.0],
-    #         "min_child_weight": [1, 3, 5],
-    #         "min_child_weight": [1, 3, 5],
-    #         "gamma": [0, 0.1, 0.2]
-    #         "gamma": [0, 0.1, 0.2]
-    #     }
-    # }
 }
 
 
 ### DATASET ###
 print("\nDATASETS LOADING:")
-# Caricamento del training set preprocessato e bilanciato con SMOTE
+# Caricamento del training set preprocessato (bilanciato al 20% con SMOTE)
 print("Loading balanced preprocessed training set...")
 train_resampled = pd.read_csv(
-    # f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote20.0_prep_train.csv"
+    # f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote{const.TARGET_MINORITY_RATIO_1_5*100}_prep_train.csv"
     f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\smote{const.TARGET_MINORITY_RATIO_1_5*100}_prep_train.csv"
 )
 y_train_res = train_resampled["isFraud"]
@@ -174,7 +173,7 @@ for name, cfg in param_grids.items():
         "Model": name,
         "Best Params": grid.best_params_,
         "Accuracy": accuracy_score(y_test, y_pred),
-        "Specificity": specificity,        
+        "Specificity": specificity,
         "Precision": precision_score(y_test, y_pred),
         "Recall": recall_score(y_test, y_pred),
         "F1": f1_score(y_test, y_pred),
@@ -184,9 +183,10 @@ for name, cfg in param_grids.items():
         "Balanced_Accuracy": (specificity + sensitivity) / 2,
         "ROC_AUC": roc_auc_score(y_test, y_pred_proba),
         "PR_AUC": average_precision_score(y_test, y_pred_proba),
-        "Confusion Matrix": cm.tolist(),
+        "Confusion Matrix": cm.tolist()
     }
     results.append(metrics)
+
 
     ### RESULTS ###
     print("\nRESULTS:")
