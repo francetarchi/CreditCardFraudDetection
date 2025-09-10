@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import joblib
 import matplotlib.pyplot as plt
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import RobustScaler
@@ -12,8 +13,8 @@ import constants as const
 
 # -------------------- DATASET --------------------
 print("Loading imbalanced dataset...")
-# df = pd.read_csv("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset.csv")
-df = pd.read_csv("C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset.csv")
+df = pd.read_csv("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\dataset.csv")
+# df = pd.read_csv("C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\dataset.csv")
 
 
 # -------------------- FEATURE ENGINEERING --------------------
@@ -58,6 +59,7 @@ print("Applying scaler...")
 scaler = RobustScaler()
 X_train[num_cols] = scaler.fit_transform(X_train[num_cols])
 X_test[num_cols] = scaler.transform(X_test[num_cols])
+print("Preprocessing complete.")
 
 
 # -------------------- FEATURE SELECTION --------------------
@@ -137,27 +139,34 @@ print("Label array size after SMOTE:", y_train_res.value_counts())
 
 
 
-# --------------------- SAVING TO CSV ---------------------
-# Salvo il dataset di training preprocessato su un file CSV
-print("Saving preprocessed training dataset to CSV...")
-# file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_train.csv"
-file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_train.csv"
-prep_train.to_csv(file_path, index=False)
+# # --------------------- SAVING TO CSV ---------------------
+# # Salvo il dataset di training preprocessato su un file CSV
+# print("Saving preprocessed training dataset to CSV...")
+# # file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_train.csv"
+# file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_train.csv"
+# prep_train.to_csv(file_path, index=False)
 
-# Salvo il dataset di testing preprocessato su un file CSV
-print("Saving preprocessed testing dataset to CSV...")
-# file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_test.csv"
-file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_test.csv"
-prep_test.to_csv(file_path, index=False)
+# # Salvo il dataset di testing preprocessato su un file CSV
+# print("Saving preprocessed testing dataset to CSV...")
+# # file_path = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_test.csv"
+# file_path = "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_test.csv"
+# prep_test.to_csv(file_path, index=False)
 
-# Salvo il dataset di training preprocessato bilanciato su un file CSV
-print("Saving balanced preprocessed training dataset to CSV...")
-# file_path = f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote{SAMPLING_STRATEGY*100}_prep_train.csv"
-file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\smote{SAMPLING_STRATEGY*100}_prep_train.csv"
-smote_prep_train.to_csv(file_path, index=False)
+# # Salvo il dataset di training preprocessato bilanciato su un file CSV
+# print("Saving balanced preprocessed training dataset to CSV...")
+# # file_path = f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote{SAMPLING_STRATEGY*100}_prep_train.csv"
+# file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\smote{SAMPLING_STRATEGY*100}_prep_train.csv"
+# smote_prep_train.to_csv(file_path, index=False)
 
-# Salvo le feature selezionate
-print("Saving selected features to CSV...")
+# # Salvo le feature selezionate
+# print("Saving selected features to CSV...")
+# # file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\selected_features.csv"
 # file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\selected_features.csv"
-file_path = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\selected_features.csv"
-selected_features.to_series().to_csv(file_path, index=False)
+# selected_features.to_series().to_csv(file_path, index=False)
+
+# Salvo oggetti di preprocessing già fittati
+joblib.dump(imputer, "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\imputer.pkl")
+joblib.dump(scaler, "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\scaler.pkl")
+joblib.dump(var_thresh, "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\var_thresh.pkl")
+joblib.dump(selector, "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\selector.pkl")
+joblib.dump(selected_features, "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\selected_features.pkl")

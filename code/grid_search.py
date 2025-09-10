@@ -70,9 +70,9 @@ param_grids = {
     # "RandomForest": {
     #     "model": RandomForestClassifier(random_state=const.RANDOM_STATE),
     #     "params": {
+    #         "n_estimators": [200],
     #         "n_estimators": [50, 100, 200],
-    #         "n_estimators": [50, 100, 200],
-    #         "max_depth": [5, 10, None],
+    #         "max_depth": [None],
     #         "max_depth": [5, 10, None],
     #         "criterion": ['entropy', 'gini'],
     #         "criterion": ['entropy', 'gini'],
@@ -84,17 +84,17 @@ param_grids = {
     #         'min_samples_split': [2, 5, 10], 
     #         'min_impurity_decrease': [0.0, 0.1, 0.2],
     #         'min_impurity_decrease': [0.0, 0.1, 0.2],
-    #         "bootstrap": [False, True]
+    #         "bootstrap": [False],
     #         "bootstrap": [False, True]
     #     }
     # }
-    "AdaBoost": {
-        "model": AdaBoostClassifier(random_state=const.RANDOM_STATE),
-        "params": {
-            "n_estimators": [200],
-            "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
-        }
-    }
+    # "AdaBoost": {
+    #     "model": AdaBoostClassifier(random_state=const.RANDOM_STATE),
+    #     "params": {
+    #         "n_estimators": [50, 100, 200],
+    #         "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
+    #     }
+    # }
     # "XGBoost": {
     #     "model": XGBClassifier(random_state=const.RANDOM_STATE),
     #     "params": {
@@ -106,7 +106,7 @@ param_grids = {
     #         "learning_rate": [0.01, 0.1, 0.2, 0.5, 0.75, 1.0],
     #         "min_child_weight": [1, 3, 5],
     #         "min_child_weight": [1, 3, 5],
-    #         "gamma": [0, 0.1, 0.2]
+    #         "gamma": [0, 0.1, 0.2],
     #         "gamma": [0, 0.1, 0.2]
     #     }
     # }
@@ -118,8 +118,8 @@ print("\nDATASETS LOADING:")
 # Caricamento del training set preprocessato e bilanciato con SMOTE
 print("Loading balanced preprocessed training set...")
 train_resampled = pd.read_csv(
-    # f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote20.0_prep_train.csv"
-    f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\smote{const.TARGET_MINORITY_RATIO_1_5*100}_prep_train.csv"
+    f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote{const.TARGET_MINORITY_RATIO_1_5*100}_prep_train.csv"
+    # f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\smote{const.TARGET_MINORITY_RATIO_1_5*100}_prep_train.csv"
 )
 y_train_res = train_resampled["isFraud"]
 X_train_res = train_resampled.drop(columns=["isFraud"])
@@ -128,8 +128,8 @@ X_train_res = train_resampled.drop(columns=["isFraud"])
 # Caricamento del test set preprocessato (sbilanciato)
 print("Loading preprocessed testing set...")
 test_set = pd.read_csv(
-    # "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_test.csv"
-    "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_test.csv"
+    "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_test.csv"
+    # "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_test.csv"
 )
 y_test = test_set["isFraud"]
 X_test = test_set.drop(columns=["isFraud"])
@@ -216,8 +216,8 @@ for name, cfg in param_grids.items():
     print(df_results)
 
     # Percorso OneDrive
-    # onedrive_dir = f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\smote{const.TARGET_MINORITY_RATIO_1_5*100}"
-    onedrive_dir = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Trained models\\smote{const.TARGET_MINORITY_RATIO_1_5*100}"
+    onedrive_dir = f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\smote{const.TARGET_MINORITY_RATIO_1_5*100}"
+    # onedrive_dir = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Trained models\\smote{const.TARGET_MINORITY_RATIO_1_5*100}"
 
     # Creo la cartella se non esiste
     os.makedirs(onedrive_dir, exist_ok=True)

@@ -1,11 +1,71 @@
 import shap
 import joblib
 import pandas as pd
-import numpy as np
 import streamlit as st
 import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.feature_selection import mutual_info_classif
 
 import constants as const
+
+# Carico il training set per informazioni sulle feature
+train_set = pd.read_csv(
+    f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote{const.TARGET_MINORITY_RATIO_1_5*100}_prep_train.csv"
+    # f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\smote{const.TARGET_MINORITY_RATIO_1_5*100}_prep_train.csv"
+)
+
+X_train = train_set.drop(columns=["isFraud"])
+y_train = train_set["isFraud"]
+
+# Carico i preprocessori salvati
+print("Loading preprocessors...")
+
+imputer = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\imputer.pkl")
+scaler = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\scaler.pkl")
+var_thresh = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\var_thresh.pkl")
+selected_features = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\selected_features.pkl")
+
+# Maschera per colonne discrete
+discrete_mask = [np.issubdtype(X_train[c].dtype, np.integer) for c in selected_features]
+
+
+def mi_score(X, y, discrete_mask=discrete_mask, random_state=const.RANDOM_STATE):
+    return mutual_info_classif(X, y, discrete_features=discrete_mask, random_state=random_state)
+
+selector = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\selector.pkl")
+
+
+def preprocess_user_input(df):
+    # --- Rimuovo colonne non utilizzate dal modello ---
+    for col in ["TransactionID_x", "TransactionID_y"]:
+        if col in df.columns:
+            df = df.drop(columns=[col])
+
+    # --- Feature temporali ---
+    df["TransactionDT_days"] = (df["TransactionDT"] / (24*60*60)).astype(int)
+    df["hour"] = (df["TransactionDT"] // 3600) % 24
+    df["dayofweek"] = (df["TransactionDT"] // (24*3600)) % 7
+
+    df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)
+    df["hour_cos"] = np.cos(2 * np.pi * df["hour"] / 24)
+    df["dayofweek_sin"] = np.sin(2 * np.pi * df["dayofweek"] / 7)
+    df["dayofweek_cos"] = np.cos(2 * np.pi * df["dayofweek"] / 7)
+
+    # --- Imputazione ---
+    num_cols = df.select_dtypes(include=np.number).columns.tolist()
+    df[num_cols] = imputer.transform(df[num_cols])
+
+    # --- Scaling ---
+    df[num_cols] = scaler.transform(df[num_cols])
+
+    # --- Feature selection ---
+    df_var = var_thresh.transform(df)
+    df_sel = selector.transform(df_var)
+
+    df_final = pd.DataFrame(df_sel, columns=selected_features)
+    return df_final
+
+
 
 # Carico i modelli salvati
 print("Loading models...")
@@ -16,36 +76,49 @@ model_knn = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di
 model_ab = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\smote20.0\\AdaBoost.pkl")
 model_xgb = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\smote20.0\\XGBoost.pkl")
 
+
 st.title("Credit Card Fraud Detection")
 
-train_set = pd.read_csv(
-    f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote{const.TARGET_MINORITY_RATIO_1_5*100}_prep_train.csv"
-    # f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\smote{const.TARGET_MINORITY_RATIO_1_5*100}_prep_train.csv"
-)
-test_set = pd.read_csv(
-    "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_test.csv"
-    # "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_test.csv"
-)
+st.subheader("Inserisci manualmente una transazione")
 
-X_train = train_set.drop(columns=["isFraud"])
-y_train = train_set["isFraud"]
+# Percorso del CSV
+file_csv = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\raw_test.csv"
 
-X_test = test_set.drop(columns=["isFraud"])
-y_test = test_set["isFraud"]
+# Apri il file e leggi le righe
+with open(file_csv, "r") as f:
+    # La prima riga è l'header
+    header = f.readline().strip().split(",")
+    # La seconda riga sono i valori
+    values = f.readline().strip().split(",")
 
-# Mostro 5 transazioni del test set
-sample_transactions = X_test.sample(5)
-st.write("Select a transaction to analyze:")
-st.dataframe(sample_transactions)
+row_dict = {}
+for col, val in zip(header, values):
+    try:
+        row_dict[col] = float(val)
+    except ValueError:
+        row_dict[col] = val
 
-# Per selezionare una riga
-selected_index = st.selectbox("Select transaction index:", sample_transactions.index)
+user_input = pd.DataFrame([row_dict])
 
-# Bottone per predire
+if "isFraud" in user_input.columns:
+    user_input = user_input.drop(columns=["isFraud"])
+
+user_input_dict = {}
+for col in user_input.columns:
+    val = user_input[col].iloc[0]
+    if np.issubdtype(user_input[col].dtype, np.number):
+        user_input_dict[col] = st.number_input(col, value=float(val))
+    else:
+        user_input_dict[col] = st.text_input(col, value=str(val))
+
+# Ricostruisco il DataFrame dall'input modificabile
+user_input_df = pd.DataFrame([user_input_dict])
+
+
 if st.button("Predict"):
-    df_input = sample_transactions.loc[[selected_index]]
+    df_input = preprocess_user_input(user_input_df)
 
-    # Lista dei modelli con nomi
+   # Lista dei modelli con nomi
     models = {
         "Random Forest": model_rf,
         "XGBoost": model_xgb,
@@ -66,7 +139,8 @@ if st.button("Predict"):
     def color_pred(val):
         return 'color: red' if val == "Fraudulent" else 'color: green'
     st.subheader("Predizioni dei modelli:")
-    st.dataframe(df_results.style.applymap(color_pred, subset=["Prediction"]))
+    st.dataframe(df_results.style.map(color_pred, subset=["Prediction"]))
+
 
     # Voto di maggioranza
     fraud_votes = list(results.values()).count("Fraudulent")
