@@ -16,6 +16,9 @@ import constants as const
 print("Loading imbalanced dataset...")
 df = pd.read_csv(paths.RAW_ALL_PATH)
 
+# Rimuovo la prima colonna inutile (indice)
+df = df.drop(df.columns[0], axis=1)
+
 
 # -------------------- FEATURE ENGINEERING --------------------
 print("\nPREPROCESSING:")
