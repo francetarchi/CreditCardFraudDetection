@@ -30,7 +30,7 @@ model_paths = {
 for name, path in model_paths.items():
     models[name] = joblib.load(path)
 tot = len(models)
-print("  --> Models loaded:", list(models.keys()), " (total: ", tot, ")")
+print(f"  --> Models loaded: {list(models.keys())} (total: {tot})")
 
 i = 1
 y_pred = {}
