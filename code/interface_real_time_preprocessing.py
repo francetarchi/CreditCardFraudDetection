@@ -6,24 +6,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.feature_selection import mutual_info_classif
 
+import paths
 import constants as const
 
 # Carico il training set per informazioni sulle feature
-train_set = pd.read_csv(
-    f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote{const.TARGET_MINORITY_RATIO_1_5*100}_prep_train.csv"
-    # f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\smote{const.TARGET_MINORITY_RATIO_1_5*100}_prep_train.csv"
-)
+train_set = pd.read_csv(paths.SMOTE20_PREP_TRAIN_PATH)
 
 X_train = train_set.drop(columns=["isFraud"])
 y_train = train_set["isFraud"]
 
 # Carico i preprocessori salvati
 print("Loading preprocessors...")
-
-imputer = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\imputer.pkl")
-scaler = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\scaler.pkl")
-var_thresh = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\var_thresh.pkl")
-selected_features = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\selected_features.pkl")
+imputer = joblib.load(paths.IMPUTER_PATH)
+scaler = joblib.load(paths.SCALER_PATH)
+var_thresh = joblib.load(paths.VAR_THRESH_PATH)
+selected_features = joblib.load(paths.SELECTED_FEATURES_PATH)
 
 # Maschera per colonne discrete
 discrete_mask = [np.issubdtype(X_train[c].dtype, np.integer) for c in selected_features]
@@ -32,7 +29,7 @@ discrete_mask = [np.issubdtype(X_train[c].dtype, np.integer) for c in selected_f
 def mi_score(X, y, discrete_mask=discrete_mask, random_state=const.RANDOM_STATE):
     return mutual_info_classif(X, y, discrete_features=discrete_mask, random_state=random_state)
 
-selector = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Preprocessors\\selector.pkl")
+selector = joblib.load(paths.SELECTOR_PATH)
 
 
 def preprocess_user_input(df):
@@ -69,12 +66,12 @@ def preprocess_user_input(df):
 
 # Carico i modelli salvati
 print("Loading models...")
-model_rf = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\smote20.0\\RandomForest.pkl")
-model_dt = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\smote20.0\\DecisionTree.pkl")
-model_nb = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\smote20.0\\NaiveBayes.pkl")
-model_knn = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\smote20.0\\KNN.pkl")
-model_ab = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\smote20.0\\AdaBoost.pkl")
-model_xgb = joblib.load("C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\smote20.0\\XGBoost.pkl")
+model_rf = joblib.load(paths.RF_PATH)
+model_dt = joblib.load(paths.DT_PATH)
+model_nb = joblib.load(paths.NB_PATH)
+model_knn = joblib.load(paths.KNN_PATH)
+model_ada = joblib.load(paths.ADA_PATH)
+model_xgb = joblib.load(paths.XGB_PATH)
 
 
 st.title("Credit Card Fraud Detection")
@@ -82,7 +79,7 @@ st.title("Credit Card Fraud Detection")
 st.subheader("Inserisci manualmente una transazione")
 
 # Percorso del CSV
-file_csv = "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\raw_test.csv"
+file_csv = paths.RAW_TEST_PATH
 
 # Apri il file e leggi le righe
 with open(file_csv, "r") as f:
@@ -125,7 +122,7 @@ if st.button("Predict"):
         "Decision Tree": model_dt,
         "Gaussian NB": model_nb,
         "KNN": model_knn,
-        "AdaBoost": model_ab
+        "AdaBoost": model_ada
     }
 
     # Predizioni
@@ -195,11 +192,11 @@ if st.button("Predict"):
         elif name == "AdaBoost":
             # Background set: usa un piccolo campione del training set
             background = train_set.sample(50, random_state=42)
-            background = background[model_ab.feature_names_in_] 
+            background = background[model_ada.feature_names_in_] 
 
-            df_input_aligned = df_input[model_ab.feature_names_in_]
+            df_input_aligned = df_input[model_ada.feature_names_in_]
 
-            explainer = shap.KernelExplainer(model_ab.predict_proba, background.sample(50, random_state=42))
+            explainer = shap.KernelExplainer(model_ada.predict_proba, background.sample(50, random_state=42))
             shap_values = explainer.shap_values(df_input_aligned, nsamples=100)
 
             # Se shape è (1, n_features, 2) -> prendi esempio 0 e classe 1
