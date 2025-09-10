@@ -2,10 +2,10 @@ import os
 import datetime
 import pandas as pd
 from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_auc_score, average_precision_score
 import joblib
 
+import paths
 import constants as const
 
 
@@ -34,112 +34,104 @@ print("\nINIZIALIZING OPERATIONS:")
 # Instanziazione dei modelli con relativi parametri
 print("Instantiating models...")
 param_grids = {
-    # "DecisionTree": {
-    #     "model": DecisionTreeClassifier(random_state=const.RANDOM_STATE),
-    #     "params": {
-    #         # "max_depth": [3, 5, 10, None],
-    #         "max_depth": [None],
-    #         # "min_samples_split": [2, 5, 10],
-    #         "min_samples_split": [5],
-    #         # "criterion": ["gini", "entropy", "log_loss"],
-    #         "criterion": ["entropy"],
-    #         # "splitter": ["best", "random"],
-    #         "splitter": ["best"],
-    #         # "max_leaf_nodes": [None, 10, 20, 30],
-    #         "max_leaf_nodes": [None],
-    #         # "min_samples_leaf": [1, 2, 5]
-    #         "min_samples_leaf": [1]
-    #     }
-    # }
-    # "NaiveBayes": {
-    #     "model": GaussianNB(),
-    #     "params": {
-    #         # "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6] 
-    #         "var_smoothing": [1e-7]
-    #     }
-    # }
-    # "KNN": {
-    #     "model": KNeighborsClassifier(),
-    #     "params": {
-    #         "n_neighbors": [3, 5, 7, 11],
-    #         "weights": ["distance"],
-    #         "p": [1],
-    #         "algorithm": ["auto"]
-    #     }
-    # }
-    # "RandomForest": {
-    #     "model": RandomForestClassifier(random_state=const.RANDOM_STATE),
-    #     "params": {
-    #         "n_estimators": [200],
-    #         "n_estimators": [50, 100, 200],
-    #         "max_depth": [None],
-    #         "max_depth": [5, 10, None],
-    #         "criterion": ['entropy', 'gini'],
-    #         "criterion": ['entropy', 'gini'],
-    #         'max_leaf_nodes':  [None, 10, 20, 30],
-    #         'max_leaf_nodes':  [None, 10, 20, 30],
-    #         'max_samples': [None, 0.5, 0.9],
-    #         'max_samples': [None, 0.5, 0.9],
-    #         'min_samples_split': [2, 5, 10], 
-    #         'min_samples_split': [2, 5, 10], 
-    #         'min_impurity_decrease': [0.0, 0.1, 0.2],
-    #         'min_impurity_decrease': [0.0, 0.1, 0.2],
-    #         "bootstrap": [False],
-    #         "bootstrap": [False, True]
-    #     }
-    # }
-    # "AdaBoost": {
-    #     "model": AdaBoostClassifier(random_state=const.RANDOM_STATE),
-    #     "params": {
-    #         "n_estimators": [50, 100, 200],
-    #         "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
-    #     }
-    # }
-    # "XGBoost": {
-    #     "model": XGBClassifier(random_state=const.RANDOM_STATE),
-    #     "params": {
-    #         "n_estimators": [50, 100, 200],
-    #         "n_estimators": [50, 100, 200],
-    #         "max_depth": [3, 5, 7, 10],
-    #         "max_depth": [3, 5, 7, 10],
-    #         "learning_rate": [0.01, 0.1, 0.2, 0.5, 0.75, 1.0],
-    #         "learning_rate": [0.01, 0.1, 0.2, 0.5, 0.75, 1.0],
-    #         "min_child_weight": [1, 3, 5],
-    #         "min_child_weight": [1, 3, 5],
-    #         "gamma": [0, 0.1, 0.2],
-    #         "gamma": [0, 0.1, 0.2]
-    #     }
-    # }
+    "DecisionTree": {
+        "model": DecisionTreeClassifier(random_state=const.RANDOM_STATE),
+        "params": {
+            # "max_depth": [3, 5, 10, None],
+            # "min_samples_split": [2, 5, 10],
+            # "criterion": ["gini", "entropy", "log_loss"],
+            # "splitter": ["best", "random"],
+            # "max_leaf_nodes": [None, 10, 20, 30],
+            # "min_samples_leaf": [1, 2, 5]
+            "max_depth": [None],
+            "min_samples_split": [5],
+            "criterion": ["entropy"],
+            "splitter": ["best"],
+            "max_leaf_nodes": [None],
+            "min_samples_leaf": [1]
+        }
+    },
+    "NaiveBayes": {
+        "model": GaussianNB(),
+        "params": {
+            # "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6]
+            "var_smoothing": [1e-7]
+        }
+    },
+    "KNN": {
+        "model": KNeighborsClassifier(),
+        "params": {
+            # "n_neighbors": [3, 5, 7, 11],
+            "n_neighbors": [3],
+            "weights": ["distance"],
+            "p": [1],
+            "algorithm": ["auto"]
+        }
+    },
+    "RandomForest": {
+        "model": RandomForestClassifier(random_state=const.RANDOM_STATE),
+        "params": {
+            # "max_depth": [5, 10, None],
+            # "n_estimators": [50, 100, 200],
+            # "criterion": ['entropy', 'gini'],
+            # 'max_leaf_nodes':  [None, 10, 20, 30],
+            # 'max_samples': [None, 0.5, 0.9],
+            # 'min_samples_split': [2, 5, 10],
+            # 'min_impurity_decrease': [0.0, 0.1, 0.2],
+            # "bootstrap": [False, True]
+            "n_estimators": [200],
+            "max_depth": [None],
+            "criterion": ['gini'],
+            'max_leaf_nodes':  [None],
+            'max_samples': [None],
+            'min_samples_split': [2],
+            'min_impurity_decrease': [0.0],
+            "bootstrap": [False]
+        }
+    },
+    "AdaBoost": {
+        "model": AdaBoostClassifier(random_state=const.RANDOM_STATE),
+        "params": {
+            # "n_estimators": [50, 100, 200],
+            # "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
+            "n_estimators": [200],
+            "learning_rate": [1.0]
+        }
+    },
+    "XGBoost": {
+        "model": XGBClassifier(random_state=const.RANDOM_STATE),
+        "params": {
+            # "n_estimators": [50, 100, 200],
+            # "max_depth": [3, 5, 7, 10],
+            # "learning_rate": [0.01, 0.1, 0.2, 0.5, 0.75, 1.0],
+            # "min_child_weight": [1, 3, 5],
+            # "gamma": [0, 0.1, 0.2]
+            "n_estimators": [200],
+            "max_depth": [10],
+            "learning_rate": [0.75],
+            "min_child_weight": [1],
+            "gamma": [0]
+        }
+    }
 }
 
 
 ### DATASET ###
 print("\nDATASETS LOADING:")
-# Caricamento del training set preprocessato e bilanciato con SMOTE
+SMOTE_PREP_TRAIN_PATH = paths.SMOTE20_PREP_TRAIN_PATH
+SMOTE_DIRECTORY_PATH = paths.SMOTE20_DIRECTORY_PATH
+
+# Caricamento del training set preprocessato (bilanciato al 20% con SMOTE)
 print("Loading balanced preprocessed training set...")
-train_resampled = pd.read_csv(
-    f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\smote{const.TARGET_MINORITY_RATIO_1_5*100}_prep_train.csv"
-    # f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\smote{const.TARGET_MINORITY_RATIO_1_5*100}_prep_train.csv"
-)
+train_resampled = pd.read_csv(SMOTE_PREP_TRAIN_PATH)
 y_train_res = train_resampled["isFraud"]
 X_train_res = train_resampled.drop(columns=["isFraud"])
 
-
 # Caricamento del test set preprocessato (sbilanciato)
 print("Loading preprocessed testing set...")
-test_set = pd.read_csv(
-    "C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Dataset\\prep_test.csv"
-    # "C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Dataset\\prep_test.csv"
-)
+test_set = pd.read_csv(paths.PREP_TEST_PATH)
 y_test = test_set["isFraud"]
 X_test = test_set.drop(columns=["isFraud"])
-
-
-# # Riduzione del training set già bilanciato per la GridSearch (per trovare i migliori ipermarametri per ogni modello)
-# print("Reducing balanced training set for GridSearch...")
-# X_train_res_small, _, y_train_res_small, _ = train_test_split(
-#     X_train_res, y_train_res, train_size=const.DIM_TRAIN_SMALL, stratify=y_train_res, random_state=const.RANDOM_STATE
-# )
 
 
 ### TRAINING AND TESTING ###
@@ -155,13 +147,8 @@ for name, cfg in param_grids.items():
     grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="f1", n_jobs=-1, verbose=2)
     
     print(f"Finding best hyper-parameters (on small rebalanced training set)...")
-    # grid.fit(X_train_res_small, y_train_res_small)
     grid.fit(X_train_res, y_train_res)
-    best_params = grid.best_params_
-    best_model = cfg["model"].set_params(**best_params)
-    
-    print("Training best model (on complete rebalanced training set)...")
-    best_model.fit(X_train_res, y_train_res)
+    best_model = grid.best_estimator_
 
     print(f"Testing best model (on imbalanced test set)...")
     y_pred = best_model.predict(X_test)
@@ -183,7 +170,7 @@ for name, cfg in param_grids.items():
         "Model": name,
         "Best Params": grid.best_params_,
         "Accuracy": accuracy_score(y_test, y_pred),
-        "Specificity": specificity,        
+        "Specificity": specificity,
         "Precision": precision_score(y_test, y_pred),
         "Recall": recall_score(y_test, y_pred),
         "F1": f1_score(y_test, y_pred),
@@ -193,9 +180,10 @@ for name, cfg in param_grids.items():
         "Balanced_Accuracy": (specificity + sensitivity) / 2,
         "ROC_AUC": roc_auc_score(y_test, y_pred_proba),
         "PR_AUC": average_precision_score(y_test, y_pred_proba),
-        "Confusion Matrix": cm.tolist(),
+        "Confusion Matrix": cm.tolist()
     }
     results.append(metrics)
+
 
     ### RESULTS ###
     print("\nRESULTS:")
@@ -215,15 +203,11 @@ for name, cfg in param_grids.items():
     # Mostro i risultati a schermo
     print(df_results)
 
-    # Percorso OneDrive
-    onedrive_dir = f"C:\\Users\\vale\\OneDrive - University of Pisa\\File di Francesco Tarchi - DMML\\Trained models\\smote{const.TARGET_MINORITY_RATIO_1_5*100}"
-    # onedrive_dir = f"C:\\Users\\franc\\OneDrive - University of Pisa\\Documenti\\_Progetti magistrale\\DMML\\Trained models\\smote{const.TARGET_MINORITY_RATIO_1_5*100}"
-
     # Creo la cartella se non esiste
-    os.makedirs(onedrive_dir, exist_ok=True)
+    os.makedirs(SMOTE_DIRECTORY_PATH, exist_ok=True)
 
     # Salvo il modello migliore in un file pickle
-    path = os.path.join(onedrive_dir, f"{name}.pkl")
+    path = os.path.join(SMOTE_DIRECTORY_PATH, f"{name}.pkl")
     joblib.dump(best_model, path)
     print(f"{name} salvato in {path}")
 
