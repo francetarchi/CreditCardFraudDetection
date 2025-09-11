@@ -88,10 +88,13 @@ with open(file_csv, "r") as f:
     # La seconda riga sono i valori
     values = f.readline().strip().split(",")
 
+
+
+
 row_dict = {}
 for col, val in zip(header, values):
     try:
-        row_dict[col] = float(val)
+        row_dict[col] = float(val) 
     except ValueError:
         row_dict[col] = val
 
@@ -101,7 +104,7 @@ user_input = pd.DataFrame([row_dict])
 if "isFraud" in user_input.columns:
     user_input = user_input.drop(columns=["isFraud"])
 
-edited_df = st.data_editor(user_input, num_rows="fixed")
+edited_df = st.data_editor(user_input, num_rows="fixed", use_container_width=True)
 
 # Ricostruisco il DataFrame dall'input modificabile
 user_input_df = pd.DataFrame([edited_df.iloc[0].to_dict()])
