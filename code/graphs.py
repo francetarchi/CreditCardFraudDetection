@@ -1,3 +1,4 @@
+import ast
 import joblib
 import pandas as pd
 import numpy as np
@@ -5,6 +6,32 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc, precision_recall_curve, average_precision_score
 
 import paths
+
+
+### UTILITY FUNCTIONS ###
+def find_ROC_stats(fpr, tpr, thresholds):
+    # Rimuovo la prima soglia infinita
+    thresholds = thresholds[1:]
+    tpr = tpr[1:]
+    fpr = fpr[1:]
+
+    index_tpr80 = -1
+    for j in range (len(tpr)):
+        if tpr[j] >= 0.8:
+            if tpr[j] == 1.0:
+                index_tpr80 = j - 1
+            else:
+                index_tpr80 = j
+            break
+
+    threshold80 = thresholds[index_tpr80]
+    tpr80 = tpr[index_tpr80]
+    fpr80 = fpr[index_tpr80]
+
+    print(f"  --> {model_name} - Threshold for TPR 80%: {threshold80}, FPR: {fpr80}, index: {index_tpr80}")
+
+    return fpr80, tpr80, threshold80
+
 
 ### RESOURCE LOADING ###
 # Caricamento del test set preprocessato (sbilanciato)
@@ -60,21 +87,33 @@ model_stats = pd.read_csv("model_results/unique.csv")
 print("Plotting confusion matrices...")
 for index, row in model_stats.iterrows():
     model_name = row['Model']
-    cm = eval(row['Confusion Matrix'])
+    cm = np.array(ast.literal_eval(row['Confusion Matrix']))
 
-    plt.figure(figsize=(6, 4))
-    plt.matshow(cm, cmap='Blues', alpha=0.7)
-    plt.title(f'Confusion Matrix for {model_name}')
-    plt.colorbar()
-    plt.xlabel('Predicted')
-    plt.ylabel('Actual')
-    plt.xticks([0, 1], ['Non-Fraud', 'Fraud'])
-    plt.yticks([0, 1], ['Non-Fraud', 'Fraud'])
+    fig, ax = plt.subplots(figsize=(7.5, 5.2))
+    im = ax.imshow(cm, cmap='Blues', alpha=0.85)
+
+    ax.set_title(f'Confusion Matrix - {model_name}', pad=12)
+    ax.set_xlabel('Predicted')
+    ax.set_ylabel('Actual')
+    ax.set_xticks([0, 1], ['Non-Fraud', 'Fraud'])
+    ax.set_yticks([0, 1], ['Non-Fraud', 'Fraud'])
+
+    # Annotazioni dentro le celle
     for (i, j), value in np.ndenumerate(cm):
-        plt.text(j, i, f'{value}', ha='center', va='center', fontsize=12)
-    
-    plt.savefig(f'graphs/confusion_matrices/{model_name}_cm.png')
-    plt.clf()
+        ax.text(j, i, f'{value}', ha='center', va='center', fontsize=12)
+
+    # Colorbar con dimensione controllata
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.06)
+    cbar.ax.tick_params(labelsize=8)
+
+    # Aggiusto margini manualmente per evitare tagli
+    fig.subplots_adjust(left=0.18, right=0.96, top=0.88, bottom=0.18)
+
+    fig.savefig(f'graphs/confusion_matrices/{model_name}_cm.png', dpi=150, bbox_inches='tight', pad_inches=0.3)
+    fig.savefig(f'graphs_svg/confusion_matrices/{model_name}_cm.svg', bbox_inches='tight', pad_inches=0.3)
+
+    plt.close(fig)
+plt.clf()
 
 # Plot ROC curves
 i = 1
@@ -90,54 +129,130 @@ for model_name, model in models.items():
     print(f"  --> ROC plotted for {model_name} ({i}/{tot}).")
     
     i += 1
+# Aggiungo la linea diagonale
 plt.plot([0,1], [0,1], "--", color="gray")
+
+# Aggiungo una linea orizzontale all'altezza del TPR all'80%
+plt.plot([0,1], [0.8,0.8], "--", color="black", alpha=0.6)
+
 plt.xlabel("FPR")
 plt.ylabel("TPR")
 plt.title("ROC Curves comparison")
 plt.legend()
 plt.savefig('graphs/ROC_comparison.png')
+plt.savefig('graphs_svg/ROC_comparison.svg')
 plt.clf()
 
 #Plot thresholds vs TPR
 i = 1
+plt.figure(figsize=(10, 6))
 print("Plotting thresholds vs TPR...")
 for model_name, model in models.items():
     print(f"  --> Extracting thresholds for {model_name}...")
 
     # ROC
-    _, tpr, thresholds = roc_curve(y_test, y_pred[model_name])
+    fpr, tpr, thresholds = roc_curve(y_test, y_pred[model_name])
 
-    plt.plot(thresholds, tpr, label='TPR', color='blue') # type: ignore
-    print(f"  --> Thresholds extracted for {model_name}.")
+    # Elaboro i risultati del ROC
+    fpr80, tpr80, threshold80 = find_ROC_stats(fpr, tpr, thresholds)
+
+    # Plotto il grafico Thresholds vs TPR
+    color = plt.get_cmap('tab10')( (i-1) % 10 )
+    plt.plot(thresholds, tpr, label=model_name, color=color)
+    plt.plot(threshold80, tpr80, marker='o', markersize=7, color=color)
+
+    # Righe tratteggiate orizzontali
+    if model_name in {"KNN", "RF", "XGB"}:
+        plt.axhline(y=tpr80, xmax=threshold80+0.04, color=color, linestyle="--", alpha=0.6)
+    elif model_name == "DT":
+        plt.axhline(y=tpr80, xmax=threshold80+0.02, color=color, linestyle="--", alpha=0.6)
+    else:
+        plt.axhline(y=tpr80, xmax=threshold80+0.01, color=color, linestyle="--", alpha=0.6)
+    
+    # Righe tratteggiate verticali
+    plt.axvline(x=threshold80, ymax=tpr80-0.02, color=color, linestyle="--", alpha=0.6)
+    
+    # Label dei valori dei pallini sull'asse orizzontale
+    if model_name == "NB":
+        plt.text(threshold80-0.01, -0.20, f"{threshold80:.3f}", rotation=45, color=color, ha="center", va="bottom", fontsize=9, fontweight="bold")
+    elif model_name in {"DT", "RF", "ADA", "XGB"}:
+        plt.text(threshold80-0.01, -0.15, f"{threshold80:.3f}", rotation=45, color=color, ha="center", va="bottom", fontsize=9, fontweight="bold")
+    
+    # Label dei valori dei pallini sull'asse verticale
+    if tpr80 < 0.79:
+        plt.text(-0.105, tpr80+0.01, f"{tpr80:.2f}", rotation=-45, color=color, ha="left", va="center", fontsize=9, fontweight="bold")
+    print(f"  --> Thresholds plotted for {model_name}.")
 
     i += 1
-plt.figure(figsize=(10, 6))
-plt.xlabel("Thresholds")
-plt.ylabel("Rate")
+# Riga verticale della threshold == 0.5
+plt.axvline(x=0.5, ymax = 1, color="black", linestyle="dotted", alpha=0.6)
+plt.text(0.49, -0.15, f"{0.5:.3f}", rotation=45, color="black", ha="center", va="bottom", fontsize=9, fontweight="bold")
+
+plt.xlabel("Thresholds", labelpad=20)
+plt.ylabel("TPR", labelpad=15)
 plt.title("Thresholds vs TPR")
 plt.legend()
 plt.savefig('graphs/Thresholds_TPR.png')
+plt.savefig('graphs_svg/Thresholds_TPR.svg')
 plt.clf()
 
 # Plot thresholds vs FPR
 i = 1
+plt.figure(figsize=(10, 6))
 print("Plotting thresholds vs FPR...")
 for model_name, model in models.items():
     print(f"  --> Extracting thresholds for {model_name}...")
 
     # ROC
-    fpr, _, thresholds = roc_curve(y_test, y_pred[model_name])
+    fpr, tpr, thresholds = roc_curve(y_test, y_pred[model_name])
 
-    plt.plot(thresholds, fpr, label='FPR', color='red') # type: ignore
-    print(f"  --> Thresholds extracted for {model_name}.")
+    # Elaboro i risultati del ROC
+    fpr80, tpr80, threshold80 = find_ROC_stats(fpr, tpr, thresholds)
+
+    # Plotto il grafico Thresholds vs FPR
+    color = plt.get_cmap('tab10')( (i-1) % 10 )
+    plt.plot(thresholds, fpr, label=model_name, color=color)
+    plt.plot(threshold80, fpr80, marker='o', markersize=8, color=color)
+
+    # Righe tratteggiate orizzontali
+    if model_name == "ADA":
+        plt.axhline(y=fpr80, xmax=threshold80, color=color, linestyle="--", alpha=0.6)
+    else:
+        plt.axhline(y=fpr80, xmax=threshold80+0.04, color=color, linestyle="--", alpha=0.6)
+
+    # Righe tratteggiate verticali
+    plt.axvline(x=threshold80, ymax=fpr80+0.025, color=color, linestyle="--", alpha=0.6)
+
+    # Label dei valori dei pallini sull'asse orizzontale
+    if model_name == "NB":
+        plt.text(threshold80-0.01, -0.20, f"{threshold80:.3f}", rotation=45, color=color, ha="center", va="bottom", fontsize=9, fontweight="bold")
+    elif model_name in {"DT", "RF", "ADA", "XGB"}:
+        plt.text(threshold80-0.01, -0.15, f"{threshold80:.3f}", rotation=45, color=color, ha="center", va="bottom", fontsize=9, fontweight="bold")
+    
+    # Label dei valori dei pallini sull'asse verticale
+    if model_name == "RF":
+        plt.text(-0.095, fpr80+0.02, f"{fpr80:.2f}", rotation=-45, color=color, ha="left", va="center", fontsize=9, fontweight="bold")
+    elif model_name == "KNN":
+        plt.text(-0.110, fpr80+0.02, f"{fpr80:.2f}", rotation=-45, color=color, ha="left", va="center", fontsize=9, fontweight="bold")
+    elif model_name == "XGB":
+        plt.text(-0.125, fpr80+0.02, f"{fpr80:.2f}", rotation=-45, color=color, ha="left", va="center", fontsize=9, fontweight="bold")
+    elif model_name == "DT":
+        plt.text(-0.140, fpr80+0.02, f"{fpr80:.2f}", rotation=-45, color=color, ha="left", va="center", fontsize=9, fontweight="bold")
+    else:
+        plt.text(-0.105, fpr80+0.01, f"{fpr80:.2f}", rotation=-45, color=color, ha="left", va="center", fontsize=9, fontweight="bold")
+    print(f"  --> Thresholds plotted for {model_name}.")
 
     i += 1
-plt.figure(figsize=(10, 6))
-plt.xlabel("Thresholds")
-plt.ylabel("Rate")
+# Riga verticale della threshold == 0.5
+plt.axvline(x=0.5, ymax = 1, color="black", linestyle="dotted", alpha=0.6)
+plt.text(0.49, -0.15, f"{0.5:.3f}", rotation=45, color="black", ha="center", va="bottom", fontsize=9, fontweight="bold")
+
+plt.xlabel("Thresholds", labelpad=20)
+plt.ylabel("FPR", labelpad=15)
 plt.title("Thresholds vs FPR")
 plt.legend()
 plt.savefig('graphs/Thresholds_FPR.png')
+plt.savefig('graphs_svg/Thresholds_FPR.svg')
 plt.clf()
 
 # Plot Precision-Recall curves
@@ -159,6 +274,7 @@ plt.ylabel("Precision")
 plt.title("Precision-Recall Curves comparison")
 plt.legend(loc='lower left')
 plt.savefig('graphs/PR_comparison.png')
+plt.savefig('graphs_svg/PR_comparison.svg')
 plt.clf()
 
 # Plot balanced accuracy bar chart
@@ -178,6 +294,7 @@ for i, v in enumerate(values):
     plt.text(i, v + 0.01, f"{v:.3f}", ha='center', fontsize=9)
 plt.tight_layout()
 plt.savefig('graphs/balanced_accuracy.png')
+plt.savefig('graphs_svg/balanced_accuracy.svg')
 plt.clf()
 
 # Plot accuracy bar chart
@@ -197,6 +314,7 @@ for i, v in enumerate(values):
     plt.text(i, v + 0.01, f"{v:.3f}", ha='center', fontsize=9)
 plt.tight_layout()
 plt.savefig('graphs/accuracy.png')
+plt.savefig('graphs_svg/accuracy.svg')
 plt.clf()
 
 # Plot specificity bar chart
@@ -216,6 +334,7 @@ for i, v in enumerate(values):
     plt.text(i, v + 0.01, f"{v:.3f}", ha='center', fontsize=9)
 plt.tight_layout()
 plt.savefig('graphs/specificity.png')
+plt.savefig('graphs_svg/specificity.svg')
 plt.clf()
 
 # Plot precision and weighted precision bar chart (in the same graph)
@@ -242,6 +361,7 @@ for i in range(len(models_names)):
     plt.text(i + width/2, values2[i] + 0.01, f"{values2[i]:.3f}", ha='center', fontsize=9)
 plt.tight_layout()
 plt.savefig('graphs/precision_weighted_precision.png')
+plt.savefig('graphs_svg/precision_weighted_precision.svg')
 plt.clf()
 
 # Plot recall and weighted recall bar chart (in the same graph)
@@ -268,6 +388,7 @@ for i in range(len(models_names)):
     plt.text(i + width/2, values2[i] + 0.01, f"{values2[i]:.3f}", ha='center', fontsize=9)
 plt.tight_layout()
 plt.savefig('graphs/recall_weighted_recall.png')
+plt.savefig('graphs_svg/recall_weighted_recall.svg')
 plt.clf()
 
 # Plot F1 and Weighted F1 bar chart (in the same graph)
@@ -294,6 +415,7 @@ for i in range(len(models_names)):
     plt.text(i + width/2, values2[i] + 0.01, f"{values2[i]:.3f}", ha='center', fontsize=9)
 plt.tight_layout()
 plt.savefig('graphs/f1_weighted_f1.png')
+plt.savefig('graphs_svg/f1_weighted_f1.svg')
 plt.clf()
 
 print("All graphs have been generated and saved in the 'graphs' folder.")
