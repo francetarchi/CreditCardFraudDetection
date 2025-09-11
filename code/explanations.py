@@ -5,6 +5,8 @@ import shap
 import os
 from sklearn.inspection import permutation_importance
 from sklearn.tree import DecisionTreeClassifier, export_text
+from typing import Tuple
+import numpy as np
 
 import paths
 
@@ -12,13 +14,13 @@ import paths
 df_train = pd.read_csv(paths.SMOTE20_PREP_TRAIN_PATH)
 
 # Uso un sottoinsieme per velocizzare i calcoli
-df_train_sample = df_train.sample(n=1000, random_state=42)
-X_train = df_train_sample.drop(columns=["isFraud"])
-y_train = df_train_sample["isFraud"]
+# df_train_sample = df_train.sample(n=1000, random_state=42)
+X_train = df_train.drop(columns=["isFraud"])
+y_train = df_train["isFraud"]
 
 # Lavoro su un sottoinsieme del train set
 
-df_test = pd.read_csv(paths.PREP_TEST_PATH).sample(n=1000, random_state=42)
+df_test = pd.read_csv(paths.PREP_TEST_PATH)
 X_test = df_test.drop(columns=["isFraud"])
 y_test = df_test["isFraud"]
 features = X_test.columns
@@ -38,6 +40,41 @@ output_dir = "graphs/explanations"
 os.makedirs(output_dir, exist_ok=True)
 
 top_n = 20
+
+MAX_SAMPLES_GLOBAL = 3000      # massimo per SHAP / permutation
+MIN_MINORITY_KEEP = 300        # tieni almeno tutte le frodi (o questo minimo)
+RANDOM_STATE = 42
+
+def make_stratified_sample(X: pd.DataFrame, y: pd.Series,
+                           max_samples: int,
+                           min_minority: int) -> Tuple[pd.DataFrame, pd.Series]:
+    minority_mask = y == 1
+    X_min = X[minority_mask]
+    y_min = y[minority_mask]
+    X_maj = X[~minority_mask]
+    y_maj = y[~minority_mask]
+
+    # tieni tutte le minoranze (o limita se enorme)
+    if len(X_min) > min_minority:
+        X_min = X_min.sample(n=min_minority, random_state=RANDOM_STATE)
+        y_min = y.loc[X_min.index]
+
+    remaining = max_samples - len(X_min)
+    if remaining < 0:
+        remaining = 0
+
+    if remaining < len(X_maj):
+        X_maj = X_maj.sample(n=remaining, random_state=RANDOM_STATE)
+        y_maj = y.loc[X_maj.index]
+
+    X_s = pd.concat([X_min, X_maj])
+    y_s = pd.concat([y_min, y_maj])
+    idx = np.random.RandomState(RANDOM_STATE).permutation(len(X_s))
+    return X_s.iloc[idx], y_s.iloc[idx]
+
+# Campione per spiegazioni globali
+X_expl, y_expl = make_stratified_sample(X_test, y_test, MAX_SAMPLES_GLOBAL, MIN_MINORITY_KEEP)
+print(f"Sample per spiegazioni: {X_expl.shape[0]} righe (fraud={y_expl.sum()})")
 
 # Loop sui modelli che hanno feature_importances_
 print("Calculating explanations...")
@@ -64,20 +101,21 @@ for name, model in models.items():
 
     # -------- SHAP --------
     try:
-        explainer = shap.Explainer(model, X_train)
-        shap_values = explainer(X_train)
+        # Usa campione ridotto per velocità
+        explainer = shap.Explainer(model, X_expl)
+        shap_values = explainer(X_expl)
         plt.figure()
-        shap.summary_plot(shap_values, X_train, show=False)
+        shap.summary_plot(shap_values, X_expl, show=False)
         plt.savefig(os.path.join(output_dir, f"{name}_shap_summary.png"))
         plt.close()
-        print(f"SHAP summary plot salvato per {name}")
+        print(f"SHAP summary plot salvato per {name} (sample size={len(X_expl)})")
     except Exception as e:
         print(f"SHAP non disponibile per {name}: {e}")
 
     # -------- Permutation Feature Importance --------
     try:
-        result = permutation_importance(model, X_test, y_test, n_repeats=10, random_state=42)
-        perm_importances = result.importances_mean
+        result = permutation_importance(model, X_expl, y_expl, n_repeats=10, random_state=RANDOM_STATE)
+        perm_importances = result.importances_mean # type: ignore
         indices = perm_importances.argsort()[::-1][:top_n]
 
         plt.figure(figsize=(8, 5))
