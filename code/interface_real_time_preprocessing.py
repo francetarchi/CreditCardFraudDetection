@@ -76,7 +76,7 @@ model_xgb = joblib.load(paths.XGB_PATH)
 
 st.title("Credit Card Fraud Detection")
 
-st.subheader("Inserisci manualmente una transazione")
+st.subheader("Inserisci una transazione")
 
 # Percorso del CSV
 file_csv = paths.RAW_TEST_PATH
@@ -95,22 +95,16 @@ for col, val in zip(header, values):
     except ValueError:
         row_dict[col] = val
 
+
 user_input = pd.DataFrame([row_dict])
 
 if "isFraud" in user_input.columns:
     user_input = user_input.drop(columns=["isFraud"])
 
-user_input_dict = {}
-for col in user_input.columns:
-    val = user_input[col].iloc[0]
-    if np.issubdtype(user_input[col].dtype, np.number):
-        user_input_dict[col] = st.number_input(col, value=float(val))
-    else:
-        user_input_dict[col] = st.text_input(col, value=str(val))
+edited_df = st.data_editor(user_input, num_rows="fixed")
 
 # Ricostruisco il DataFrame dall'input modificabile
-user_input_df = pd.DataFrame([user_input_dict])
-
+user_input_df = pd.DataFrame([edited_df.iloc[0].to_dict()])
 
 if st.button("Predict"):
     df_input = preprocess_user_input(user_input_df)
