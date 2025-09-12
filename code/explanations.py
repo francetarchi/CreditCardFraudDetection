@@ -29,8 +29,8 @@ models = {
     # "Decision Tree": joblib.load(paths.DT_PATH),
     # "XGBoost": joblib.load(paths.XGB_PATH),
     # "Gaussian NB": joblib.load(paths.NB_PATH),
-    "Random Forest": joblib.load(paths.RF_PATH),
-    # "AdaBoost": joblib.load(paths.ADA_PATH),
+    # "Random Forest": joblib.load(paths.RF_PATH),
+    "AdaBoost": joblib.load(paths.ADA_PATH),
     # "KNN": joblib.load(paths.KNN_PATH)
 }
 
@@ -100,29 +100,20 @@ for name, model in models.items():
 
     # -------- SHAP --------
     try:
-        top_n = 20
-        # Considero solo le top N feature per velocità
-        if hasattr(model, "feature_importances_"):
-            importances = model.feature_importances_
-            indices = np.argsort(importances)[::-1][:top_n]
-            top_features = X_expl.columns[indices]
-            X_expl_top = X_expl[top_features]
-        else:
-            X_expl_top = X_expl  # tutte le features per modelli senza feature_importances_
 
         # SHAP Explainer
-        if name in ["Random Forest", "XGBoost", "Decision Tree", "AdaBoost"]:
+        if name in ["Random Forest", "XGBoost", "Decision Tree"]:
             explainer = shap.TreeExplainer(model)
         else:
-            explainer = shap.KernelExplainer(model.predict_proba, X_expl_top.sample(50, random_state=42))
+            explainer = shap.KernelExplainer(model.predict_proba, X_expl.sample(50, random_state=42))
 
-        shap_values = explainer.shap_values(X_expl_top)
+        shap_values = explainer.shap_values(X_expl)
 
         plt.figure()
-        shap.summary_plot(shap_values, X_expl_top, show=False)
+        shap.summary_plot(shap_values, X_expl, show=False, max_display=10)
         plt.savefig(os.path.join(output_dir, f"{name}_shap_summary.png"))
         plt.close()
-        print(f"SHAP summary plot salvato per {name} (sample size={len(X_expl_top)})")
+        print(f"SHAP summary plot salvato per {name} (sample size={len(X_expl)})")
 
     except Exception as e:
         print(f"SHAP non disponibile per {name}: {e}")
