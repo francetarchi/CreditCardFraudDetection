@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_auc_score, average_precision_score
 import joblib
+import json  # <--- aggiunto
 
 import paths
 import constants as const
@@ -139,12 +140,11 @@ print("\nTRAINING AND TESTING:")
 # Addestramento e valutazione dei modelli
 print("Training and evaluating models...")
 results = []
-name = ""
 for name, cfg in param_grids.items():
     print(f"\nModel: {name}")
     
     print("Instantiating grid for GridSearch...")
-    grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="f1", n_jobs=-1, verbose=2)
+    grid = GridSearchCV(cfg["model"], cfg["params"], cv=10, scoring="f1", n_jobs=-1, verbose=2)
     
     print(f"Finding best hyper-parameters (on small rebalanced training set)...")
     grid.fit(X_train_res, y_train_res)
@@ -157,51 +157,51 @@ for name, cfg in param_grids.items():
     # Calcolo metriche
     print(f"Evaluating best model...")
 
-    cm = confusion_matrix(y_test, y_pred)
-    print(f"Confusion matrix:\n{cm}\n")
+    raw_cm = confusion_matrix(y_test, y_pred)
+    print(f"Confusion matrix:\n{raw_cm}\n")
 
-    cm = confusion_matrix(y_test, y_pred, labels=[0,1])
-    tn, fp, fn, tp = cm.ravel()
+    conf_matrix = confusion_matrix(y_test, y_pred, labels=[0, 1])
+    tn, fp, fn, tp = conf_matrix.ravel()
 
-    specificity = tn / (tn + fp)
-    sensitivity = tp / (tp + fn)
+    specificity = tn / (tn + fp) if (tn + fp) > 0 else 0.0
+    sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+
+    conf_matrix_list = conf_matrix.tolist()
 
     metrics = {
         "Model": name,
-        "Best Params": grid.best_params_,
         "Accuracy": accuracy_score(y_test, y_pred),
         "Specificity": specificity,
-        "Precision": precision_score(y_test, y_pred),
-        "Recall": recall_score(y_test, y_pred),
-        "F1": f1_score(y_test, y_pred),
-        "Precision_weighted": precision_score(y_test, y_pred, average="weighted"),
-        "Recall_weighted": recall_score(y_test, y_pred, average="weighted"),
-        "F1_weighted": f1_score(y_test, y_pred, average="weighted"),
+        "Precision": precision_score(y_test, y_pred, zero_division=0),
+        "Recall": recall_score(y_test, y_pred, zero_division=0),
+        "F1": f1_score(y_test, y_pred, zero_division=0),
+        "Precision_weighted": precision_score(y_test, y_pred, average="weighted", zero_division=0),
+        "Recall_weighted": recall_score(y_test, y_pred, average="weighted", zero_division=0),
+        "F1_weighted": f1_score(y_test, y_pred, average="weighted", zero_division=0),
         "Balanced_Accuracy": (specificity + sensitivity) / 2,
         "ROC_AUC": roc_auc_score(y_test, y_pred_proba),
         "PR_AUC": average_precision_score(y_test, y_pred_proba),
-        "Confusion Matrix": cm.tolist()
+        "Confusion Matrix": json.dumps(conf_matrix_list)
     }
     results.append(metrics)
-
 
     ### RESULTS ###
     print("\nRESULTS:")
     # Creo un DataFrame con i risultati
-    df_results = pd.DataFrame(results)
+    df_metrics = pd.DataFrame(metrics, index=[0])
 
     # Salvo i risultati su un file CSV
     print("Saving results to CSV...")
     file_path = f"model_results/{name}_{const.TARGET_MINORITY_RATIO_1_5*100}.csv"
     if os.path.exists(file_path):
         # Apro in append, senza scrivere l'header
-        df_results.to_csv(file_path, mode='a', index=False, header=False)
+        df_metrics.to_csv(file_path, mode='a', index=False, header=False)
     else:
         # Se non esiste, scrivo normalmente con header
-        df_results.to_csv(file_path, index=False)
+        df_metrics.to_csv(file_path, index=False)
 
     # Mostro i risultati a schermo
-    print(df_results)
+    print(df_metrics)
 
     # Creo la cartella se non esiste
     os.makedirs(SMOTE_DIRECTORY_PATH, exist_ok=True)
@@ -211,6 +211,12 @@ for name, cfg in param_grids.items():
     joblib.dump(best_model, path)
     print(f"{name} salvato in {path}")
 
+
+# Creo un DataFrame unico con tutti i risultati
+df_results = pd.DataFrame(results)
+
+# Memorizzo tutti i risultati in un unico file CSV
+df_results.to_csv("model_results/unique.csv", index=False)
 
 ### TIMING ###
 now = datetime.datetime.now()
