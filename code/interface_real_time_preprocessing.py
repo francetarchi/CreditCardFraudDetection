@@ -76,7 +76,7 @@ model_xgb = joblib.load(paths.XGB_PATH)
 
 st.title("Credit Card Fraud Detection")
 
-st.subheader("Inserisci manualmente una transazione")
+st.subheader("Insert a transaction to classify:")
 
 # Percorso del CSV
 file_csv = paths.RAW_TEST_PATH
@@ -88,29 +88,26 @@ with open(file_csv, "r") as f:
     # La seconda riga sono i valori
     values = f.readline().strip().split(",")
 
+
+
+
 row_dict = {}
 for col, val in zip(header, values):
     try:
-        row_dict[col] = float(val)
+        row_dict[col] = float(val) 
     except ValueError:
         row_dict[col] = val
+
 
 user_input = pd.DataFrame([row_dict])
 
 if "isFraud" in user_input.columns:
     user_input = user_input.drop(columns=["isFraud"])
 
-user_input_dict = {}
-for col in user_input.columns:
-    val = user_input[col].iloc[0]
-    if np.issubdtype(user_input[col].dtype, np.number):
-        user_input_dict[col] = st.number_input(col, value=float(val))
-    else:
-        user_input_dict[col] = st.text_input(col, value=str(val))
+edited_df = st.data_editor(user_input, num_rows="fixed", use_container_width=True)
 
 # Ricostruisco il DataFrame dall'input modificabile
-user_input_df = pd.DataFrame([user_input_dict])
-
+user_input_df = pd.DataFrame([edited_df.iloc[0].to_dict()])
 
 if st.button("Predict"):
     df_input = preprocess_user_input(user_input_df)
@@ -135,24 +132,24 @@ if st.button("Predict"):
     df_results = pd.DataFrame(list(results.items()), columns=["Model", "Prediction"])
     def color_pred(val):
         return 'color: red' if val == "Fraudulent" else 'color: green'
-    st.subheader("Predizioni dei modelli:")
+    st.subheader("Model Predictions:")
     st.dataframe(df_results.style.map(color_pred, subset=["Prediction"]))
 
 
     # Voto di maggioranza
     fraud_votes = list(results.values()).count("Fraudulent")
     legit_votes = list(results.values()).count("Legitimate")
-    st.subheader("Voto finale dei modelli:")
+    st.subheader("Final Model Vote:")
     if fraud_votes > legit_votes:
-        st.error(f"Transazione segnalata come Fraudulent da {fraud_votes}/{len(models)} modelli!")
+        st.error(f"Transaction classified as Fraudulent by {fraud_votes}/{len(models)} models!")
     else:
-        st.success(f"Transazione segnalata come Legitimate da {legit_votes}/{len(models)} modelli!")
+        st.success(f"Transaction classified as Legitimate by {legit_votes}/{len(models)} models!")
 
     # --- SHAP explanations ---
-    st.subheader("Explanations (per singolo modello)")
+    st.subheader("Explanations (per model):")
 
     for name, model in models.items():
-        st.subheader(f"Spiegazione per {name}")
+        st.subheader(f"Explanation for {name}")
         if name in ["Random Forest", "Decision Tree", "XGBoost"]:
             explainer = shap.TreeExplainer(model)
             shap_values = explainer.shap_values(df_input)
@@ -233,15 +230,15 @@ if st.button("Predict"):
         elif name == "Gaussian NB":
             proba = model.predict_proba(df_input)[0]
             st.write(f"Posterior probabilities (Legitimate vs Fraudulent): {proba}")
-            st.write(f"La transazione è stata classificata come **{results[name]}** con probabilità {max(proba):.2f}")
+            st.write(f"Transaction classified as **{results[name]}** with probability {max(proba):.2f}")
 
         elif name == "KNN":
             neighbors = model.kneighbors(df_input, n_neighbors=3, return_distance=True)
             neighbor_indices = neighbors[1][0]
             neighbor_labels = y_train.iloc[neighbor_indices].values
-            st.write("I 3 vicini più simili e le loro etichette reali:")
+            st.write("The 3 most similar neighbors and their true labels:")
             st.table(pd.DataFrame({
                 "Index": neighbor_indices,
                 "Label": ["Fraudulent" if l==1 else "Legitimate" for l in neighbor_labels]
             }))
-            st.write(f"La transazione è stata classificata come **{results[name]}** perché {sum(neighbor_labels)} dei 3 vicini erano Fraudulent.")
+            st.write(f"Transaction classified as **{results[name]}** because {sum(neighbor_labels)} of the 3 neighbors were Fraudulent.")
