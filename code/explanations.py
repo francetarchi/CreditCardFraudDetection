@@ -13,12 +13,11 @@ import paths
 # Carico dataset preprocessato
 df_train = pd.read_csv(paths.SMOTE20_PREP_TRAIN_PATH)
 
-# Uso un sottoinsieme per velocizzare i calcoli
-# df_train_sample = df_train.sample(n=1000, random_state=42)
+
 X_train = df_train.drop(columns=["isFraud"])
 y_train = df_train["isFraud"]
 
-# Lavoro su un sottoinsieme del train set
+
 
 df_test = pd.read_csv(paths.PREP_TEST_PATH)
 X_test = df_test.drop(columns=["isFraud"])
@@ -27,12 +26,12 @@ features = X_test.columns
 
 # Carico i modelli
 models = {
-    "Decision Tree": joblib.load(paths.DT_PATH),
-    "XGBoost": joblib.load(paths.XGB_PATH),
-    "Gaussian NB": joblib.load(paths.NB_PATH),
+    # "Decision Tree": joblib.load(paths.DT_PATH),
+    # "XGBoost": joblib.load(paths.XGB_PATH),
+    # "Gaussian NB": joblib.load(paths.NB_PATH),
     "Random Forest": joblib.load(paths.RF_PATH),
-    "AdaBoost": joblib.load(paths.ADA_PATH),
-    "KNN": joblib.load(paths.KNN_PATH)
+    # "AdaBoost": joblib.load(paths.ADA_PATH),
+    # "KNN": joblib.load(paths.KNN_PATH)
 }
 
 # Directory per salvare i grafici
@@ -42,7 +41,7 @@ os.makedirs(output_dir, exist_ok=True)
 top_n = 20
 
 MAX_SAMPLES_GLOBAL = 3000      # massimo per SHAP / permutation
-MIN_MINORITY_KEEP = 300        # tieni almeno tutte le frodi (o questo minimo)
+MIN_MINORITY_KEEP = 300        # tengo almeno tutte le frodi (o questo minimo)
 RANDOM_STATE = 42
 
 def make_stratified_sample(X: pd.DataFrame, y: pd.Series,
@@ -54,7 +53,7 @@ def make_stratified_sample(X: pd.DataFrame, y: pd.Series,
     X_maj = X[~minority_mask]
     y_maj = y[~minority_mask]
 
-    # tieni tutte le minoranze (o limita se enorme)
+    # tengo tutte le minoranze (o limito se enorme)
     if len(X_min) > min_minority:
         X_min = X_min.sample(n=min_minority, random_state=RANDOM_STATE)
         y_min = y.loc[X_min.index]
@@ -82,62 +81,79 @@ print("Calculating explanations...")
 for name, model in models.items():
     print(f"\n================ {name} =================")
 
-    # -------- Feature Importances --------
-    if hasattr(model, "feature_importances_"):
-        importances = model.feature_importances_
-        indices = importances.argsort()[::-1][:top_n]
+    # # -------- Feature Importances --------
+    # if hasattr(model, "feature_importances_"):
+    #     importances = model.feature_importances_
+    #     indices = importances.argsort()[::-1][:top_n]
 
-        plt.figure(figsize=(8, 5))
-        plt.barh(range(len(indices)), importances[indices][::-1])
-        plt.yticks(range(len(indices)), features[indices][::-1])
-        plt.title(f"Feature Importances - {name}")
-        plt.xlabel("Importance")
-        plt.ylabel("Features")
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, f"{name}_feature_importances.png"))
-        plt.close()
-    else:
-        print(f"{name} non supporta feature_importances_")
+    #     plt.figure(figsize=(8, 5))
+    #     plt.barh(range(len(indices)), importances[indices][::-1])
+    #     plt.yticks(range(len(indices)), features[indices][::-1])
+    #     plt.title(f"Feature Importances - {name}")
+    #     plt.xlabel("Importance")
+    #     plt.ylabel("Features")
+    #     plt.tight_layout()
+    #     plt.savefig(os.path.join(output_dir, f"{name}_feature_importances.png"))
+    #     plt.close()
+    # else:
+    #     print(f"{name} non supporta feature_importances_")
 
     # -------- SHAP --------
     try:
-        # Usa campione ridotto per velocità
-        explainer = shap.Explainer(model, X_expl)
-        shap_values = explainer(X_expl)
+        top_n = 20
+        # Considero solo le top N feature per velocità
+        if hasattr(model, "feature_importances_"):
+            importances = model.feature_importances_
+            indices = np.argsort(importances)[::-1][:top_n]
+            top_features = X_expl.columns[indices]
+            X_expl_top = X_expl[top_features]
+        else:
+            X_expl_top = X_expl  # tutte le features per modelli senza feature_importances_
+
+        # SHAP Explainer
+        if name in ["Random Forest", "XGBoost", "Decision Tree", "AdaBoost"]:
+            explainer = shap.TreeExplainer(model)
+        else:
+            explainer = shap.KernelExplainer(model.predict_proba, X_expl_top.sample(50, random_state=42))
+
+        shap_values = explainer.shap_values(X_expl_top)
+
         plt.figure()
-        shap.summary_plot(shap_values, X_expl, show=False)
+        shap.summary_plot(shap_values, X_expl_top, show=False)
         plt.savefig(os.path.join(output_dir, f"{name}_shap_summary.png"))
         plt.close()
-        print(f"SHAP summary plot salvato per {name} (sample size={len(X_expl)})")
+        print(f"SHAP summary plot salvato per {name} (sample size={len(X_expl_top)})")
+
     except Exception as e:
         print(f"SHAP non disponibile per {name}: {e}")
 
-    # -------- Permutation Feature Importance --------
-    try:
-        result = permutation_importance(model, X_expl, y_expl, n_repeats=10, random_state=RANDOM_STATE)
-        perm_importances = result.importances_mean # type: ignore
-        indices = perm_importances.argsort()[::-1][:top_n]
 
-        plt.figure(figsize=(8, 5))
-        plt.barh(range(len(indices)), perm_importances[indices][::-1])
-        plt.yticks(range(len(indices)), features[indices][::-1])
-        plt.title(f"Permutation Feature Importances - {name}")
-        plt.xlabel("Importance")
-        plt.ylabel("Features")
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, f"{name}_permutation_importances.png"))
-        plt.close()
-    except Exception as e:
-        print(f"Permutation importance non disponibile per {name}: {e}")
+    # # -------- Permutation Feature Importance --------
+    # try:
+    #     result = permutation_importance(model, X_expl, y_expl, n_repeats=10, random_state=RANDOM_STATE)
+    #     perm_importances = result.importances_mean # type: ignore
+    #     indices = perm_importances.argsort()[::-1][:top_n]
 
-    # -------- Rule Extraction (Surrogate Decision Tree) --------
-    try:
-        surrogate = DecisionTreeClassifier(max_depth=3)
-        surrogate.fit(X_train, model.predict(X_train))
-        rules = export_text(surrogate, feature_names=list(features))
-        rules_file = os.path.join(output_dir, f"{name}_surrogate_rules.txt")
-        with open(rules_file, "w") as f:
-            f.write(rules)
-        print(f"Rule extraction salvata per {name} in {rules_file}")
-    except Exception as e:
-        print(f"Rule extraction non disponibile per {name}: {e}")
+    #     plt.figure(figsize=(8, 5))
+    #     plt.barh(range(len(indices)), perm_importances[indices][::-1])
+    #     plt.yticks(range(len(indices)), features[indices][::-1])
+    #     plt.title(f"Permutation Feature Importances - {name}")
+    #     plt.xlabel("Importance")
+    #     plt.ylabel("Features")
+    #     plt.tight_layout()
+    #     plt.savefig(os.path.join(output_dir, f"{name}_permutation_importances.png"))
+    #     plt.close()
+    # except Exception as e:
+    #     print(f"Permutation importance non disponibile per {name}: {e}")
+
+    # # -------- Rule Extraction (Surrogate Decision Tree) --------
+    # try:
+    #     surrogate = DecisionTreeClassifier(max_depth=3)
+    #     surrogate.fit(X_train, model.predict(X_train))
+    #     rules = export_text(surrogate, feature_names=list(features))
+    #     rules_file = os.path.join(output_dir, f"{name}_surrogate_rules.txt")
+    #     with open(rules_file, "w") as f:
+    #         f.write(rules)
+    #     print(f"Rule extraction salvata per {name} in {rules_file}")
+    # except Exception as e:
+    #     print(f"Rule extraction non disponibile per {name}: {e}")
