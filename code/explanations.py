@@ -125,7 +125,7 @@ for name, model in models.items():
     # -------- Permutation Feature Importance --------
     try:
         result = permutation_importance(model, X_expl, y_expl, n_repeats=10, random_state=RANDOM_STATE)
-        perm_importances = result.importances_mean 
+        perm_importances = result.importances_mean # type: ignore
         indices = perm_importances.argsort()[::-1][:top_n]
 
         plt.figure(figsize=(8, 5))
