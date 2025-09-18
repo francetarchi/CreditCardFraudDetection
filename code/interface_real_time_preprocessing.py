@@ -89,8 +89,6 @@ with open(file_csv, "r") as f:
     values = f.readline().strip().split(",")
 
 
-
-
 row_dict = {}
 for col, val in zip(header, values):
     try:

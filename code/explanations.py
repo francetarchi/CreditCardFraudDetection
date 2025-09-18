@@ -39,8 +39,8 @@ os.makedirs(output_dir, exist_ok=True)
 
 top_n = 20
 
-MAX_SAMPLES_GLOBAL = 3000      # massimo per SHAP / permutation
-MIN_MINORITY_KEEP = 50       # tengo almeno questo numero di frodi
+MAX_SAMPLES_GLOBAL = 100      # massimo per SHAP / permutation
+MIN_MINORITY_KEEP = 10       # tengo almeno questo numero di frodi
 RANDOM_STATE = 42
 
 def make_stratified_sample(X: pd.DataFrame, y: pd.Series,
@@ -104,15 +104,12 @@ for name, model in models.items():
         if name in ["Random Forest", "XGBoost", "Decision Tree"]:
             explainer = shap.TreeExplainer(model)
         else:
-            explainer = shap.KernelExplainer(model.predict_proba, X_expl.sample(50, random_state=42))
+            explainer = shap.KernelExplainer(model.predict_proba, X_expl)
 
-        shap_values = explainer.shap_values(X_expl)
-
-        if isinstance(shap_values, list) and len(shap_values) == 2:
-            shap_values = shap_values[1]
+        shap_values = explainer.shap_values(X_expl, nsamples=100)
 
         plt.figure()
-        shap.summary_plot(shap_values, X_expl, show=False, max_display=10)
+        shap.summary_plot(shap_values[:, :, 1], X_expl, show=False)
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, f"{name}_shap_summary.png"))
         plt.close()
@@ -125,7 +122,7 @@ for name, model in models.items():
     # -------- Permutation Feature Importance --------
     try:
         result = permutation_importance(model, X_expl, y_expl, n_repeats=10, random_state=RANDOM_STATE)
-        perm_importances = result.importances_mean 
+        perm_importances = result.importances_mean
         indices = perm_importances.argsort()[::-1][:top_n]
 
         plt.figure(figsize=(8, 5))
