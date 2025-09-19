@@ -9,15 +9,17 @@ from typing import Tuple
 import numpy as np
 
 import paths
-
-# Carico dataset preprocessato
-df_train = pd.read_csv(paths.SMOTE20_PREP_TRAIN_PATH)
+import constants as const
 
 
-X_train = df_train.drop(columns=["isFraud"])
-y_train = df_train["isFraud"]
+# Carico dataset bilanciato preprocessato
+print("Loading balanced preprocessed train set...")
+smote_train_set = pd.read_csv(paths.SMOTE20_PREP_TRAIN_PATH)
+X_train = smote_train_set.drop(columns=["isFraud"])
+y_train = smote_train_set["isFraud"]
 
-
+# Carico il test set preprocessato
+print("Loading preprocessed test set...")
 df_test = pd.read_csv(paths.PREP_TEST_PATH)
 X_test = df_test.drop(columns=["isFraud"])
 y_test = df_test["isFraud"]
@@ -25,23 +27,17 @@ features = X_test.columns
 
 # Carico i modelli
 models = {
-    "Decision Tree": joblib.load(paths.DT_PATH),
-    "XGBoost": joblib.load(paths.XGB_PATH),
+    "KNN": joblib.load(paths.KNN_PATH),
     "Gaussian NB": joblib.load(paths.NB_PATH),
+    "Decision Tree": joblib.load(paths.DT_PATH),
     "Random Forest": joblib.load(paths.RF_PATH),
     "AdaBoost": joblib.load(paths.ADA_PATH),
-    "KNN": joblib.load(paths.KNN_PATH)
+    "XGBoost": joblib.load(paths.XGB_PATH)
 }
 
 # Directory per salvare i grafici
 output_dir = "graphs/explanations"
 os.makedirs(output_dir, exist_ok=True)
-
-top_n = 20
-
-MAX_SAMPLES_GLOBAL = 100      # massimo per SHAP / permutation
-MIN_MINORITY_KEEP = 10       # tengo almeno questo numero di frodi
-RANDOM_STATE = 42
 
 def make_stratified_sample(X: pd.DataFrame, y: pd.Series,
                            max_samples: int,
@@ -54,7 +50,7 @@ def make_stratified_sample(X: pd.DataFrame, y: pd.Series,
 
     # tengo tutte le minoranze (o limito se enorme)
     if len(X_min) > min_minority:
-        X_min = X_min.sample(n=min_minority, random_state=RANDOM_STATE)
+        X_min = X_min.sample(n=min_minority, random_state=const.RANDOM_STATE)
         y_min = y.loc[X_min.index]
 
     remaining = max_samples - len(X_min)
@@ -62,16 +58,16 @@ def make_stratified_sample(X: pd.DataFrame, y: pd.Series,
         remaining = 0
 
     if remaining < len(X_maj):
-        X_maj = X_maj.sample(n=remaining, random_state=RANDOM_STATE)
+        X_maj = X_maj.sample(n=remaining, random_state=const.RANDOM_STATE)
         y_maj = y.loc[X_maj.index]
 
     X_s = pd.concat([X_min, X_maj])
     y_s = pd.concat([y_min, y_maj])
-    idx = np.random.RandomState(RANDOM_STATE).permutation(len(X_s))
+    idx = np.random.RandomState(const.RANDOM_STATE).permutation(len(X_s))
     return X_s.iloc[idx], y_s.iloc[idx]
 
 # Campione per spiegazioni globali
-X_expl, y_expl = make_stratified_sample(X_test, y_test, MAX_SAMPLES_GLOBAL, MIN_MINORITY_KEEP)
+X_expl, y_expl = make_stratified_sample(X_test, y_test, const.MAX_SAMPLES_GLOBAL, const.MIN_MINORITY_KEEP)
 print(f"Sample per spiegazioni: {X_expl.shape[0]} righe (fraud={y_expl.sum()})")
 
 # Loop sui modelli che hanno feature_importances_
@@ -83,7 +79,7 @@ for name, model in models.items():
     # -------- Feature Importances --------
     if hasattr(model, "feature_importances_"):
         importances = model.feature_importances_
-        indices = importances.argsort()[::-1][:top_n]
+        indices = importances.argsort()[::-1][:const.TOP_N]
 
         plt.figure(figsize=(8, 5))
         plt.barh(range(len(indices)), importances[indices][::-1])
@@ -99,14 +95,13 @@ for name, model in models.items():
 
     # -------- SHAP --------
     try:
-
-        # SHAP Explainer
+        shap_values = None
         if name in ["Random Forest", "XGBoost", "Decision Tree"]:
             explainer = shap.TreeExplainer(model)
+            shap_values = explainer.shap_values(X_expl)
         else:
             explainer = shap.KernelExplainer(model.predict_proba, X_expl)
-
-        shap_values = explainer.shap_values(X_expl, nsamples=100)
+            shap_values = explainer.shap_values(X_expl, nsamples=100)
 
         plt.figure()
         shap.summary_plot(shap_values[:, :, 1], X_expl, show=False)
@@ -119,11 +114,11 @@ for name, model in models.items():
         print(f"SHAP non disponibile per {name}: {e}")
 
 
-    # -------- Permutation Feature Importance --------
+    # -------- Permutation Feature Importances --------
     try:
-        result = permutation_importance(model, X_expl, y_expl, n_repeats=10, random_state=RANDOM_STATE)
+        result = permutation_importance(model, X_expl, y_expl, n_repeats=10, random_state=const.RANDOM_STATE)
         perm_importances = result.importances_mean # type: ignore
-        indices = perm_importances.argsort()[::-1][:top_n]
+        indices = perm_importances.argsort()[::-1][:const.TOP_N]
 
         plt.figure(figsize=(8, 5))
         plt.barh(range(len(indices)), perm_importances[indices][::-1])

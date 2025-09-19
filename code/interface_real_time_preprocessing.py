@@ -4,65 +4,25 @@ import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.feature_selection import mutual_info_classif
 
 import paths
-import constants as const
 
 # Carico il training set per informazioni sulle feature
-train_set = pd.read_csv(paths.SMOTE20_PREP_TRAIN_PATH)
+print("Loading balanced preprocessed training set...")
+smote_train_set = pd.read_csv(paths.SMOTE20_PREP_TRAIN_PATH)
 
-X_train = train_set.drop(columns=["isFraud"])
-y_train = train_set["isFraud"]
+X_train = smote_train_set.drop(columns=["isFraud"])
+y_train = smote_train_set["isFraud"]
 
 # Carico i preprocessori salvati
 print("Loading preprocessors...")
 imputer = joblib.load(paths.IMPUTER_PATH)
 scaler = joblib.load(paths.SCALER_PATH)
-var_thresh = joblib.load(paths.VAR_THRESH_PATH)
-selected_features = joblib.load(paths.SELECTED_FEATURES_PATH)
+encoder = joblib.load(paths.ENCODER_PATH)
 
-# Maschera per colonne discrete
-discrete_mask = [np.issubdtype(X_train[c].dtype, np.integer) for c in selected_features]
-
-
-def mi_score(X, y, discrete_mask=discrete_mask, random_state=const.RANDOM_STATE):
-    return mutual_info_classif(X, y, discrete_features=discrete_mask, random_state=random_state)
-
-selector = joblib.load(paths.SELECTOR_PATH)
-
-
-def preprocess_user_input(df):
-    # --- Rimuovo colonne non utilizzate dal modello ---
-    for col in ["TransactionID_x", "TransactionID_y"]:
-        if col in df.columns:
-            df = df.drop(columns=[col])
-
-    # --- Feature temporali ---
-    df["TransactionDT_days"] = (df["TransactionDT"] / (24*60*60)).astype(int)
-    df["hour"] = (df["TransactionDT"] // 3600) % 24
-    df["dayofweek"] = (df["TransactionDT"] // (24*3600)) % 7
-
-    df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)
-    df["hour_cos"] = np.cos(2 * np.pi * df["hour"] / 24)
-    df["dayofweek_sin"] = np.sin(2 * np.pi * df["dayofweek"] / 7)
-    df["dayofweek_cos"] = np.cos(2 * np.pi * df["dayofweek"] / 7)
-
-    # --- Imputazione ---
-    num_cols = df.select_dtypes(include=np.number).columns.tolist()
-    df[num_cols] = imputer.transform(df[num_cols])
-
-    # --- Scaling ---
-    df[num_cols] = scaler.transform(df[num_cols])
-
-    # --- Feature selection ---
-    df_var = var_thresh.transform(df)
-    df_sel = selector.transform(df_var)
-
-    df_final = pd.DataFrame(df_sel, columns=selected_features)
-    return df_final
-
-
+# Carico le feature selezionate durante il preprocessing
+print("Loading selected features...")
+selected_features = pd.read_csv(paths.SELECTED_FEATURES_PATH)
 
 # Carico i modelli salvati
 print("Loading models...")
@@ -74,20 +34,44 @@ model_ada = joblib.load(paths.ADA_PATH)
 model_xgb = joblib.load(paths.XGB_PATH)
 
 
-st.title("Credit Card Fraud Detection")
+# Funzione di preprocessing per l'input utente
+def preprocess_user_input(df):
+    print("Preprocessing user input...")
+    
+    # --- Feature temporali ---
+    df["TransactionDT_days"] = df["TransactionDT"] / (24*60*60)
+    hour = (df["TransactionDT"] // 3600) % 24
+    dayofweek = (df["TransactionDT"] // (24*3600)) % 7
+    df["hour_sin"] = np.sin(2 * np.pi * hour / 24)
+    df["hour_cos"] = np.cos(2 * np.pi * hour / 24)
+    df["dayofweek_sin"] = np.sin(2 * np.pi * dayofweek / 7)
+    df["dayofweek_cos"] = np.cos(2 * np.pi * dayofweek / 7)
 
+    # --- Imputazione ---
+    df = imputer.transform(df)
+
+    # --- Scaling ---
+    df = scaler.transform(df)
+
+    # --- Encoding ---
+    df = encoder.transform(df)
+
+    # --- Feature selection ---
+    df_final = pd.DataFrame(df, columns=selected_features.columns)
+
+    return df_final
+
+
+# Streamlit app
+st.title("Credit Card Fraud Detection")
 st.subheader("Insert a transaction to classify:")
 
-# Percorso del CSV
 file_csv = paths.RAW_TEST_PATH
-
-# Apri il file e leggi le righe
 with open(file_csv, "r") as f:
     # La prima riga è l'header
     header = f.readline().strip().split(",")
     # La seconda riga sono i valori
     values = f.readline().strip().split(",")
-
 
 row_dict = {}
 for col, val in zip(header, values):
@@ -95,7 +79,6 @@ for col, val in zip(header, values):
         row_dict[col] = float(val) 
     except ValueError:
         row_dict[col] = val
-
 
 user_input = pd.DataFrame([row_dict])
 
@@ -112,16 +95,17 @@ if st.button("Predict"):
 
    # Lista dei modelli con nomi
     models = {
-        "Random Forest": model_rf,
-        "XGBoost": model_xgb,
-        "Decision Tree": model_dt,
-        "Gaussian NB": model_nb,
         "KNN": model_knn,
-        "AdaBoost": model_ada
+        "Gaussian NB": model_nb,
+        "Decision Tree": model_dt,
+        "Random Forest": model_rf,
+        "AdaBoost": model_ada,
+        "XGBoost": model_xgb
     }
 
     # Predizioni
     results = {}
+
     for name, model in models.items():
         pred = model.predict(df_input)[0]
         results[name] = "Fraudulent" if pred else "Legitimate"
@@ -133,7 +117,6 @@ if st.button("Predict"):
     st.subheader("Model Predictions:")
     st.dataframe(df_results.style.map(color_pred, subset=["Prediction"]))
 
-
     # Voto di maggioranza
     fraud_votes = list(results.values()).count("Fraudulent")
     legit_votes = list(results.values()).count("Legitimate")
@@ -143,9 +126,8 @@ if st.button("Predict"):
     else:
         st.success(f"Transaction classified as Legitimate by {legit_votes}/{len(models)} models!")
 
-    # --- SHAP explanations ---
+    # SHAP explanations
     st.subheader("Explanations (per model):")
-
     for name, model in models.items():
         st.subheader(f"Explanation for {name}")
         if name in ["Random Forest", "Decision Tree", "XGBoost"]:
@@ -169,7 +151,7 @@ if st.button("Predict"):
                 else:
                     base_val = float(base_val_array[0])
             else:
-                base_val = float(base_val)
+                base_val = float(base_val) # type: ignore
 
             # Waterfall plot
             fig, ax = plt.subplots()  
@@ -177,8 +159,8 @@ if st.button("Predict"):
                 shap.Explanation(
                     values=shap_vals,
                     base_values=base_val,
-                    data=df_input_aligned.iloc[0] if name == "AdaBoost" else df_input.iloc[0],
-                    feature_names=df_input_aligned.columns if name == "AdaBoost" else df_input.columns
+                    data=df_input.iloc[0],
+                    feature_names=df_input.columns
                 ),
                 show=False
             )
@@ -186,7 +168,7 @@ if st.button("Predict"):
 
         elif name == "AdaBoost":
             # Background set: usa un piccolo campione del training set
-            background = train_set.sample(50, random_state=42)
+            background = smote_train_set.sample(50, random_state=42)
             background = background[model_ada.feature_names_in_] 
 
             df_input_aligned = df_input[model_ada.feature_names_in_]
@@ -218,8 +200,8 @@ if st.button("Predict"):
                 shap.Explanation(
                     values=shap_vals,
                     base_values=base_val,
-                    data=df_input_aligned.iloc[0] if name == "AdaBoost" else df_input.iloc[0],
-                    feature_names=df_input_aligned.columns if name == "AdaBoost" else df_input.columns
+                    data=df_input_aligned.iloc[0],
+                    feature_names=df_input_aligned.columns
                 ),
                 show=False
             )
