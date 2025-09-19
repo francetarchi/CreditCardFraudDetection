@@ -1,11 +1,12 @@
 import shap
 import joblib
+import numpy as np
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
-import numpy as np
 
 import paths
+
 
 # Carico il training set per informazioni sulle feature
 print("Loading balanced preprocessed training set...")

@@ -1,10 +1,11 @@
 import joblib
 import pandas as pd
-import numpy as np
-from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import f1_score, roc_auc_score
 from scipy.stats import ttest_rel
+from sklearn.metrics import f1_score
+from sklearn.model_selection import StratifiedKFold
+
 import paths
+
 
 # Carico il training set preprocessato con SMOTE
 df = pd.read_csv(paths.SMOTE20_PREP_TRAIN_PATH)
