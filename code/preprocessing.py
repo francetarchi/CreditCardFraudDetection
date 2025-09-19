@@ -15,6 +15,7 @@ import constants as const
 
 
 # ------------------- AUXILIARY ARRAYS -------------------
+print("Defining auxiliary arrays of features...")
 all_categorical_features = [
     "ProductCD",
     "card1", "card2", "card3", "card4", "card5", "card6",
@@ -114,12 +115,10 @@ imputer = ColumnTransformer(
         ("num", SimpleImputer(strategy="median"), numerical_features)
     ]
 )
-X_train = imputer.fit_transform(X_train)
-X_test = imputer.transform(X_test)
 
-# Riconverto a DataFrame per poter indicizzare per nome colonna
-X_train = pd.DataFrame.sparse.from_spmatrix(X_train, index=y_train.index)
-X_test = pd.DataFrame.sparse.from_spmatrix(X_test, index=y_test.index)
+# Riconverto a DataFrame
+X_train = pd.DataFrame(imputer.fit_transform(X_train), index=y_train.index) # type: ignore
+X_test = pd.DataFrame(imputer.transform(X_test), index=y_test.index) # type: ignore
 
 
 # -------------------- Scaling --------------------
@@ -132,6 +131,21 @@ scaler = ColumnTransformer(
 )
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
+
+# Riconverto a DataFrame
+if hasattr(X_train, "tocsc"):  # Controllo se è una matrice sparsa
+    print(f"X_train after scaler was a sparse matrix. X_train.type: ", type(X_train))
+    X_train = pd.DataFrame.sparse.from_spmatrix(X_train, index=y_train.index)
+else:
+    print(f"X_train after scaler was a dense matrix. X_train.type: ", type(X_train))
+    X_train = pd.DataFrame(X_train, index=y_train.index) # type: ignore
+
+if hasattr(X_test, "tocsc"):
+    print(f"X_test after scaler was a sparse matrix. X_test.type: ", type(X_test))
+    X_test = pd.DataFrame.sparse.from_spmatrix(X_test, index=y_test.index)
+else:
+    print(f"X_test after scaler was a dense matrix. X_test.type: ", type(X_test))
+    X_test = pd.DataFrame(X_test, index=y_test.index) # type: ignore
 
 
 # -------------------- Encoding --------------------
