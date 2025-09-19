@@ -6,41 +6,15 @@ import joblib
 from sklearn.impute import SimpleImputer
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, RobustScaler
-from sklearn.base import BaseEstimator, TransformerMixin
-from imblearn.over_sampling import SMOTE
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import VarianceThreshold, SelectKBest, mutual_info_classif
+from imblearn.over_sampling import SMOTE
 
 import paths
 import constants as const
 
 
-class MissingValueFilter(BaseEstimator, TransformerMixin):
-    def __init__(self, threshold=0.9):
-        self.threshold = threshold
-        self.selected_columns_ = None
-
-    def fit(self, X, y=None):
-        # Calcola le colonne da mantenere
-        self.selected_columns_ = X.columns[X.isnull().mean() < self.threshold].tolist()
-        return self
-
-    def transform(self, X):
-        # Seleziona solo le colonne precedentemente calcolate
-        return X[self.selected_columns_].copy()
-
-
-
-# -------------------- DATASET --------------------
-print("Loading imbalanced dataset...")
-df = pd.read_csv(paths.RAW_ALL_PATH)
-
-# -------------------- CREATING RAW DATASETS --------------------
-print("Splitting raw data into train and test sets...")
-raw_train, raw_test = train_test_split(
-    df, test_size=const.DIM_TEST, random_state=const.RANDOM_STATE, stratify=df["isFraud"]
-)
-
+# ------------------- AUXILIARY ARRAYS -------------------
 all_categorical_features = [
     "ProductCD",
     "card1", "card2", "card3", "card4", "card5", "card6",
@@ -50,6 +24,7 @@ all_categorical_features = [
     "DeviceType", "DeviceInfo",
     "id_12", "id_13", "id_14", "id_15", "id_16", "id_17", "id_18", "id_19", "id_20", "id_21", "id_22", "id_23", "id_24", "id_25", "id_26", "id_27", "id_28", "id_29","id_30", "id_31", "id_32", "id_33", "id_34", "id_35", "id_36", "id_37", "id_38"
 ]
+
 all_numerical_features = [
     "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14",
     "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "D14", "D15",
@@ -77,8 +52,21 @@ all_numerical_features = [
 ]
 
 
+# -------------------- DATASET --------------------
+print("Loading imbalanced dataset...")
+df = pd.read_csv(paths.RAW_ALL_PATH)
+
+
+# -------------------- CREATING RAW DATASETS --------------------
+print("Splitting raw data into train and test sets...")
+raw_train, raw_test = train_test_split(
+    df, test_size=const.DIM_TEST, random_state=const.RANDOM_STATE, stratify=df["isFraud"]
+)
+
+
 # -------------------- FEATURE ENGINEERING --------------------
 print("\nPREPROCESSING:")
+
 # -------------------- Feature temporali --------------------
 # La colonna TransactionDT è in secondi.
 # Non usiamo il valore grezzo perché sono secondi cumulativi a partire da una data e ora di riferimento sconosciute, quindi NON hanno un significato immediato.
@@ -258,4 +246,3 @@ joblib.dump(scaler, paths.SCALER_PATH)
 joblib.dump(encoder, paths.ENCODER_PATH)
 joblib.dump(var_thresh, paths.VAR_THRESH_PATH)
 joblib.dump(selector, paths.SELECTOR_PATH)
-# joblib.dump(selected_features, paths.SELECTED_FEATURES_PATH)
