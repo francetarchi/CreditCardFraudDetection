@@ -52,10 +52,35 @@ all_numerical_features = [
     "TransactionDT_days", "hour_sin", "hour_cos", "dayofweek_sin", "dayofweek_cos"  # nuove features temporali
 ]
 
+print("\n")
+
+
+# ------------------ FUNZIONI AUSILIARIE ----------------------
+print("Defining auxiliary functions...")
+
+# La funzione prende in input un DataFrame e due array di features: aggiorna gli array rimuovendo le features che non sono presenti nel DataFrame.
+# Ritorna i due array aggiornati e un terzo array che è la concatenazione dei primi due.
+def update_features_arrays(df, categorical_features, numerical_features):
+    print("Updating features arrays...")
+    cat_ftr = [col for col in categorical_features if col in df.columns]
+    num_ftr = [col for col in numerical_features if col in df.columns]
+
+    return cat_ftr, num_ftr, cat_ftr + num_ftr
+
+# La funzione prende in input una matrice di features X e un vettore target y e ritorna gli score di mutual information fra ogni feature e il target.
+def mi_score(X, y):
+    if hasattr(X, "toarray"):  # se è sparse
+        X = X.toarray()
+    return mutual_info_classif(X, y, discrete_features=discrete_mask, random_state=const.RANDOM_STATE)
+
+print("\n")
+
 
 # -------------------- DATASET --------------------
 print("Loading imbalanced dataset...")
 df = pd.read_csv(paths.RAW_ALL_PATH)
+
+print("\n")
 
 
 # -------------------- CREATING RAW DATASETS --------------------
@@ -63,6 +88,8 @@ print("Splitting raw data into train and test sets...")
 raw_train, raw_test = train_test_split(
     df, test_size=const.DIM_TEST, random_state=const.RANDOM_STATE, stratify=df["isFraud"]
 )
+
+print("\n")
 
 
 # -------------------- FEATURE ENGINEERING --------------------
@@ -83,11 +110,17 @@ df["hour_cos"] = np.cos(2 * np.pi * hour / 24)
 df["dayofweek_sin"] = np.sin(2 * np.pi * dayofweek / 7)
 df["dayofweek_cos"] = np.cos(2 * np.pi * dayofweek / 7)
 
+categorical_features, numerical_features, feature_names = update_features_arrays(df, all_categorical_features, all_numerical_features)
+print("\n")
+
 
 # -------------------- Features / Target --------------------
 print("Creating feature matrix (X) and target vector (y)...")
 X = df.drop(columns=["isFraud"])
 y = df["isFraud"]
+
+categorical_features, numerical_features, feature_names = update_features_arrays(X, all_categorical_features, all_numerical_features)
+print("\n")
 
 
 # -------------------- 1st feature selection --------------------
@@ -95,9 +128,8 @@ print("Applying first feature selection...")
 X = X.drop(columns=["TransactionID", "TransactionDT"])  # useless for prediction
 X = X.loc[:, X.isnull().mean() < const.MISSING_VALUES_THRESHOLD]    # drop features with more than 90% missing values
 
-# Creating new lists of categorical and numerical features after first feature selection
-categorical_features = [col for col in all_categorical_features if col in X.columns]
-numerical_features = [col for col in all_numerical_features if col in X.columns]
+categorical_features, numerical_features, feature_names = update_features_arrays(X, all_categorical_features, all_numerical_features)
+print("\n")
 
 
 # -------------------- Train / Test --------------------
@@ -106,6 +138,8 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=const.DIM_TEST, random_state=const.RANDOM_STATE, stratify=y
 )
 
+print("\n")
+
 
 # -------------------- Imputation --------------------
 print("Applying imputer...")
@@ -113,12 +147,14 @@ imputer = ColumnTransformer(
     transformers=[
         ("cat", SimpleImputer(strategy="most_frequent"), categorical_features),
         ("num", SimpleImputer(strategy="median"), numerical_features)
-    ]
+    ],
+    verbose=True
 )
+X_train = pd.DataFrame(imputer.fit_transform(X_train), columns=feature_names, index=y_train.index) # type: ignore
+X_test = pd.DataFrame(imputer.transform(X_test), columns=feature_names, index=y_test.index) # type: ignore
 
-# Riconverto a DataFrame
-X_train = pd.DataFrame(imputer.fit_transform(X_train), index=y_train.index) # type: ignore
-X_test = pd.DataFrame(imputer.transform(X_test), index=y_test.index) # type: ignore
+categorical_features, numerical_features, feature_names = update_features_arrays(X_train, all_categorical_features, all_numerical_features)
+print("\n")
 
 
 # -------------------- Scaling --------------------
@@ -127,25 +163,14 @@ scaler = ColumnTransformer(
     transformers=[
         ("cat", "passthrough", categorical_features),  # lascia intatte le categoriche
         ("num", RobustScaler(), numerical_features)
-    ]
+    ],
+    verbose=True
 )
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
+X_train = pd.DataFrame(scaler.fit_transform(X_train), columns=feature_names, index=y_train.index) # type: ignore
+X_test = pd.DataFrame(scaler.transform(X_test), columns=feature_names, index=y_test.index) # type: ignore
 
-# Riconverto a DataFrame
-if hasattr(X_train, "tocsc"):  # Controllo se è una matrice sparsa
-    print(f"X_train after scaler was a sparse matrix. X_train.type: ", type(X_train))
-    X_train = pd.DataFrame.sparse.from_spmatrix(X_train, index=y_train.index)
-else:
-    print(f"X_train after scaler was a dense matrix. X_train.type: ", type(X_train))
-    X_train = pd.DataFrame(X_train, index=y_train.index) # type: ignore
-
-if hasattr(X_test, "tocsc"):
-    print(f"X_test after scaler was a sparse matrix. X_test.type: ", type(X_test))
-    X_test = pd.DataFrame.sparse.from_spmatrix(X_test, index=y_test.index)
-else:
-    print(f"X_test after scaler was a dense matrix. X_test.type: ", type(X_test))
-    X_test = pd.DataFrame(X_test, index=y_test.index) # type: ignore
+categorical_features, numerical_features, feature_names = update_features_arrays(X_train, all_categorical_features, all_numerical_features)
+print("\n")
 
 
 # -------------------- Encoding --------------------
@@ -154,67 +179,72 @@ encoder = ColumnTransformer(
     transformers=[
         ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features),
         ("num", "passthrough", numerical_features)  # lascia intatte le numeriche
-    ]
+    ],
+    verbose=True
 )
+X_train_sparse = encoder.fit_transform(X_train)
+X_test_sparse = encoder.transform(X_test)
 
-X_train = encoder.fit_transform(X_train)
-X_test = encoder.transform(X_test)
-
-# Converto in DataFrame pandas (OneHotEncoder ritorna una sparse matrix)
-X_train = pd.DataFrame.sparse.from_spmatrix(X_train, index=y_train.index)
-X_test = pd.DataFrame.sparse.from_spmatrix(X_test, index=y_test.index)
+feature_names = encoder.get_feature_names_out()
 
 
 # -------------------- 2nd feature selection --------------------
-# Variance Threshold
-print(f"Selecting best features by variance threshold...")
+# Seleziono le feature con varianza sopra una certa soglia (VarianceThreshold)
+print("Selecting best features by variance threshold...")
 var_thresh = VarianceThreshold(threshold=const.VARIANCE_THRESHOLD)
-X_train = pd.DataFrame(np.asarray(var_thresh.fit_transform(X_train)), index=y_train.index)
-X_test = pd.DataFrame(np.asarray(var_thresh.transform(X_test)), index=y_test.index)
+X_train_sparse = var_thresh.fit_transform(X_train_sparse)
+X_test_sparse = var_thresh.transform(X_test_sparse)
 
-# Mask per discrete/continue dopo il variance threshold
-remaining_cols = X_train.columns[var_thresh.get_support()]
+X_train = pd.DataFrame(X_train_sparse.toarray(), columns=feature_names[var_thresh.get_support()], index=y_train.index) # type: ignore
+X_test = pd.DataFrame(X_test_sparse.toarray(), columns=feature_names[var_thresh.get_support()], index=y_test.index) # type: ignore
+
+# Definisco una mask per features discrete/continue
+print("Creating dynamic mask for discrete features...")
+remaining_cols = X_train.columns
 discrete_mask = [np.issubdtype(X_train[c].to_numpy().dtype, np.integer) for c in remaining_cols]
 
-# Score function mutual info
+# Seleziono le migliori k feature
 print("Selecting best features by mutual information...")
-def mi_score(X, y):
-    return mutual_info_classif(X, y, discrete_features=discrete_mask, random_state=const.RANDOM_STATE)
-
-# Seleziono le migliori k
 selector = SelectKBest(score_func=mi_score, k=const.BEST_K_FEATURES)
 X_train = selector.fit_transform(X_train, y_train)
 X_test = selector.transform(X_test)
 
-# Mantengo i nomi delle feature selezionate
-print("Keeping names of selected features...")
-selected_features = remaining_cols[selector.get_support()]
-X_train = pd.DataFrame(np.asarray(X_train), columns=selected_features, index=y_train.index)
-X_test = pd.DataFrame(np.asarray(X_test), columns=selected_features, index=y_test.index)
-
-# Unisco X e y in un unico DataFrame (separatamente fra training e testing)
-prep_train = X_train.copy()
-prep_train["isFraud"] = y_train
-prep_test = X_test.copy()
-prep_test["isFraud"] = y_test
-
-# Plot degli score di Mutual Information (non ci sono p-value con MI)
+# Plot degli score di Mutual Information
+print("Plotting Mutual Information scores...")
 mi_scores = np.nan_to_num(selector.scores_)  # garantisce niente NaN
 order = np.argsort(mi_scores)                # dal più basso al più alto
 ordered_scores = mi_scores[order]
 indices = np.arange(len(ordered_scores))
-
 plt.bar(indices, ordered_scores, width=0.8)
 plt.title("Feature Mutual Information scores (ordered)")
 plt.xlabel("Feature rank")
 plt.ylabel("MI score")
 plt.tight_layout()
 plt.savefig("graphs/mi_scores.png")
+plt.savefig("graphs_svg/mi_scores.svg")
 
-print("Preprocessing complete.")
+# Mantengo i nomi delle features finali
+print("Keeping names of selected features...")
+selected_features = remaining_cols[selector.get_support()]
+
+# Ricostruisco DataFrame denso
+print("Rebuilding dense DataFrame...")
+X_train = pd.DataFrame(X_train, columns=selected_features, index=y_train.index)
+X_test = pd.DataFrame(X_test, columns=selected_features, index=y_test.index) # type: ignore
+
+# Unisco X e y in un unico DataFrame (separatamente fra training e testing)
+print("Combining preprocessed X and y into single DataFrame...")
+prep_train = X_train.copy()
+prep_train["isFraud"] = y_train
+prep_test = X_test.copy()
+prep_test["isFraud"] = y_test
+
+print("\n")
+print("---------- Preprocessing complete ----------\n")
 
 
 # -------------------- SMOTE --------------------
+print("\nSMOTE:")
 SAMPLING_STRATEGY = const.TARGET_MINORITY_RATIO_1_5
 SMOTED_TRAIN_PATH = paths.SMOTE20_PREP_TRAIN_PATH
 
@@ -227,8 +257,12 @@ X_train, y_train = smote.fit_resample(X_train, y_train) # type: ignore[arg-type]
 smote_prep_train = X_train.copy()
 smote_prep_train["isFraud"] = y_train
 
+print("\n")
+print("---------- SMOTE complete ----------\n")
+
 
 # --------------------- SAVING TO CSV ---------------------
+print("\nSAVING RESULTS:")
 # Salvo il dataset di training grezzo su un file CSV
 print("Saving raw training dataset to CSV...")
 raw_train.to_csv(paths.RAW_TRAIN_PATH, index=False)
@@ -260,3 +294,6 @@ joblib.dump(scaler, paths.SCALER_PATH)
 joblib.dump(encoder, paths.ENCODER_PATH)
 joblib.dump(var_thresh, paths.VAR_THRESH_PATH)
 joblib.dump(selector, paths.SELECTOR_PATH)
+
+print("\n")
+print("---------- All files saved ----------\n")
