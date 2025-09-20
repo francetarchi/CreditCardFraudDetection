@@ -6,7 +6,7 @@ DIM_TEST = 0.25
 
 MISSING_VALUES_THRESHOLD = 0.90  # soglia per la rimozione delle feature con troppi valori mancanti
 VARIANCE_THRESHOLD = 0.05  # soglia per la rimozione delle feature a bassa varianza
-BEST_K_FEATURES = 120  # numero di feature migliori da selezionare con SelectKBest
+BEST_K_FEATURES = 60    # numero di feature migliori da selezionare con SelectKBest
 
 TARGET_MINORITY_RATIO_1_5 = 0.20  # rapporto 1:5 (1 fraud ogni 5 non fraud)
 TARGET_MINORITY_RATIO_1_4 = 0.25  # rapporto 1:4 (1 fraud ogni 4 non fraud)
