@@ -1,0 +1,2 @@
+Model,Best Parameters,Accuracy,Specificity,Precision,Recall,F1,Precision_weighted,Recall_weighted,F1_weighted,Balanced_Accuracy,ROC_AUC,PR_AUC,Confusion Matrix
+XGBoost,"{""learning_rate"": 0.1, ""max_depth"": 20, ""min_child_weight"": 1, ""n_estimators"": 500}",0.9772208487147357,0.9950936695000316,0.781630740393627,0.4843205574912892,0.5980638221584798,0.9745598785633101,0.9772208487147357,0.9746240004517931,0.7397071134956604,0.916991409426349,0.6281677855069046,"[[141770, 699], [2664, 2502]]"

@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_auc_score, average_precision_score
 import joblib
-import json  # <--- aggiunto
+import json
 
 import paths
 import constants as const
@@ -35,83 +35,90 @@ print("\nINIZIALIZING OPERATIONS:")
 # Instanziazione dei modelli con relativi parametri
 print("Instantiating models...")
 param_grids = {
-    "DecisionTree": {
-        "model": DecisionTreeClassifier(random_state=const.RANDOM_STATE),
-        "params": {
-            # "max_depth": [3, 5, 10, None],
-            # "min_samples_split": [2, 5, 10],
-            # "criterion": ["gini", "entropy", "log_loss"],
-            # "splitter": ["best", "random"],
-            # "max_leaf_nodes": [None, 10, 20, 30],
-            # "min_samples_leaf": [1, 2, 5]
-            "max_depth": [None],
-            "min_samples_split": [5],
-            "criterion": ["entropy"],
-            "splitter": ["best"],
-            "max_leaf_nodes": [None],
-            "min_samples_leaf": [1]
-        }
-    },
-    "NaiveBayes": {
-        "model": GaussianNB(),
-        "params": {
-            # "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6]
-            "var_smoothing": [1e-7]
-        }
-    },
-    "KNN": {
-        "model": KNeighborsClassifier(),
-        "params": {
-            # "n_neighbors": [3, 5, 7, 11],
-            "n_neighbors": [3],
-            "weights": ["distance"],
-            "p": [1],
-            "algorithm": ["auto"]
-        }
-    },
-    "RandomForest": {
-        "model": RandomForestClassifier(random_state=const.RANDOM_STATE),
-        "params": {
-            # "max_depth": [5, 10, None],
-            # "n_estimators": [50, 100, 200],
-            # "criterion": ['entropy', 'gini'],
-            # 'max_leaf_nodes':  [None, 10, 20, 30],
-            # 'max_samples': [None, 0.5, 0.9],
-            # 'min_samples_split': [2, 5, 10],
-            # 'min_impurity_decrease': [0.0, 0.1, 0.2],
-            # "bootstrap": [False, True]
-            "n_estimators": [200],
-            "max_depth": [None],
-            "criterion": ['gini'],
-            'max_leaf_nodes':  [None],
-            'max_samples': [None],
-            'min_samples_split': [2],
-            'min_impurity_decrease': [0.0],
-            "bootstrap": [False]
-        }
-    },
-    "AdaBoost": {
-        "model": AdaBoostClassifier(random_state=const.RANDOM_STATE),
-        "params": {
-            # "n_estimators": [50, 100, 200],
-            # "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
-            "n_estimators": [200],
-            "learning_rate": [1.0]
-        }
-    },
+    # "DecisionTree": {
+        # "model": DecisionTreeClassifier(random_state=const.RANDOM_STATE),
+    #     "params": {
+    #         # "max_depth": [3, 5, 10, None],
+    #         # "min_samples_split": [2, 5, 10],
+    #         # "criterion": ["gini", "entropy", "log_loss"],
+    #         # "splitter": ["best", "random"],
+    #         # "max_leaf_nodes": [None, 10, 20, 30],
+    #         # "min_samples_leaf": [1, 2, 5]
+
+    #         "max_depth": [None],
+    #         "min_samples_split": [2],
+    #         "criterion": ["entropy"],
+    #         "splitter": ["random"],
+    #         "max_leaf_nodes": [None],
+    #         "min_samples_leaf": [1]
+    #     }
+    # },
+    # "NaiveBayes": {
+    #     "model": GaussianNB(),
+    #     "params": {
+    #         # "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1]
+
+    #         "var_smoothing": [1e-5]
+    #     }
+    # },
+    # "KNN": {
+    #     "model": KNeighborsClassifier(),
+    #     "params": {
+    #         # "n_neighbors": [3, 5, 7, 11],
+    #         "n_neighbors": [3],
+    #         "weights": ["distance"],
+    #         "p": [1],
+    #         "algorithm": ["auto"]
+    #     }
+    # },
+    # "RandomForest": {
+    #     "model": RandomForestClassifier(random_state=const.RANDOM_STATE),
+    #     "params": {
+    #         # "max_depth": [5, 10, None],
+    #         # "n_estimators": [50, 100, 200, 500, 1000, 2000, 5000],
+    #         # "criterion": ['entropy', 'gini'],
+    #         # 'max_leaf_nodes': [None, 10, 20, 30],
+    #         # 'max_samples': [None, 0.5, 0.9],
+    #         # 'min_samples_split': [2, 5, 10],
+    #         # 'min_impurity_decrease': [0.0, 0.1, 0.2],
+    #         # "bootstrap": [False, True],
+
+    #         "n_estimators": [1000],
+    #         "max_depth": [None],
+    #         "criterion": ['gini'],
+    #         'max_leaf_nodes':  [None],
+    #         'max_samples': [None],
+    #         'min_samples_split': [5],
+    #         'min_impurity_decrease': [0.0],
+    #         "bootstrap": [False]
+    #     }
+    # },
+    # "AdaBoost": {
+    #     "model": AdaBoostClassifier(random_state=const.RANDOM_STATE),
+    #     "params": {
+    #         "n_estimators": [50, 100, 200, 500, 1000, 1500, 2000, 5000],
+    #         "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
+
+    #         # "n_estimators": [200],
+    #         # "learning_rate": [1.0]
+    #     }
+    # },
     "XGBoost": {
         "model": XGBClassifier(random_state=const.RANDOM_STATE),
         "params": {
-            # "n_estimators": [50, 100, 200],
-            # "max_depth": [3, 5, 7, 10],
-            # "learning_rate": [0.01, 0.1, 0.2, 0.5, 0.75, 1.0],
+            # "n_estimators": [50, 100, 200, 500, 1000, 1500, 2000, 5000],
+            # "n_estimators": [300, 400, 500, 600, 700, 800, 900],
+            # "max_depth": [3, 5, 7, 10, 12, 14, 16, 18, 20, 22, 25, 30],
+            "learning_rate": [0.0001, 0.001, 0.01, 0.1, 0.2, 0.5, 0.75, 1.0],
             # "min_child_weight": [1, 3, 5],
-            # "gamma": [0, 0.1, 0.2]
-            "n_estimators": [200],
-            "max_depth": [10],
-            "learning_rate": [0.75],
-            "min_child_weight": [1],
-            "gamma": [0]
+            # "gamma": [0, 0.1, 0.2],
+            # "scale_pos_weight": [1, 2, 3, 5, 10],
+
+            "n_estimators": [500],
+            "max_depth": [10, 20, 30, None],
+            # "learning_rate": [0.01],
+            # "min_child_weight": [1],
+            # "gamma": [0]
         }
     }
 }
@@ -146,11 +153,11 @@ for name, cfg in param_grids.items():
     print("Instantiating grid for GridSearch...")
     grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="f1", n_jobs=-1, verbose=2)
     
-    print(f"Finding best hyper-parameters (on small rebalanced training set)...")
+    print(f"Finding best hyper-parameters with GridSearch...")
     grid.fit(X_train_res, y_train_res)
     best_model = grid.best_estimator_
 
-    print(f"Testing best model (on imbalanced test set)...")
+    print(f"Testing best model...")
     y_pred = best_model.predict(X_test)
     y_pred_proba = best_model.predict_proba(X_test)[:, 1]
     
@@ -170,6 +177,7 @@ for name, cfg in param_grids.items():
 
     metrics = {
         "Model": name,
+        "Best Parameters": json.dumps(grid.best_params_),
         "Accuracy": accuracy_score(y_test, y_pred),
         "Specificity": specificity,
         "Precision": precision_score(y_test, y_pred, zero_division=0),
