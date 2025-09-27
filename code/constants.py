@@ -17,3 +17,17 @@ MAX_SAMPLES_GLOBAL = 100    # massimo per SHAP / permutation
 MIN_MINORITY_KEEP = 10      # tengo almeno questo numero di frodi
 
 TOP_N = 20  # numero di feature da mostrare nei grafici
+
+# Scoring metrics for model evaluation
+SCORING = {
+        "f1": "f1",
+        "precision": "precision",
+        "recall": "recall",
+        "f1_weighted": "f1_weighted",
+        "precision_weighted": "precision_weighted",
+        "recall_weighted": "recall_weighted",
+        "accuracy": "accuracy",
+        "balanced_accuracy": "balanced_accuracy",
+        "roc_auc": "roc_auc",
+        "average_precision": "average_precision",
+    }
