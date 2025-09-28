@@ -108,18 +108,20 @@ param_grids = {
         "params": {
             # "n_estimators": [50, 100, 200, 500, 1000, 1500, 2000, 5000],
             # "n_estimators": [300, 400, 500, 600, 700, 800, 900],
-            # "max_depth": [3, 5, 7, 10, 12, 14, 16, 18, 20, 22, 25, 30],
+            # "max_depth": [3, 5, 7, 10, 12, 14, 15, 16, 18, 20, 22, 25, 30],
             # "learning_rate": [0.0001, 0.001, 0.01, 0.1, 0.2, 0.5, 0.75, 1.0],
-            # "min_child_weight": [1, 3, 5],
+            # "min_child_weight": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
             # "gamma": [0, 0.1, 0.2],
             # "scale_pos_weight": [1, 2, 3, 4, 5, 6, 8, 10],
 
             "n_estimators": [500],
-            "max_depth": [0],
+            "max_depth": [15],
             "learning_rate": [0.05],
-            # "min_child_weight": [1],
+            "min_child_weight": [1],
             # "gamma": [0],
-            "scale_pos_weight": [5]
+            # "subsample": 0.8,
+            # "colsample_bytree": 0.8,
+            "scale_pos_weight": [4, 6, 7]
         }
     }
 }
