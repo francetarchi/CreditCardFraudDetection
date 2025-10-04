@@ -35,6 +35,24 @@ print("\nINIZIALIZING OPERATIONS:")
 # Instanziazione dei modelli con relativi parametri
 print("Instantiating models...")
 param_grids = {
+    # "KNN": {
+    #     "model": KNeighborsClassifier(),
+    #     "params": {
+    #         # "n_neighbors": [3, 5, 7, 11],
+    #         "n_neighbors": [3],
+    #         "weights": ["distance"],
+    #         "p": [1],
+    #         "algorithm": ["auto"]
+    #     }
+    # },
+    # "NaiveBayes": {
+    #     "model": GaussianNB(),
+    #     "params": {
+    #         # "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1]
+
+    #         "var_smoothing": [1e-5]
+    #     }
+    # },
     # "DecisionTree": {
         # "model": DecisionTreeClassifier(random_state=const.RANDOM_STATE),
     #     "params": {
@@ -51,24 +69,6 @@ param_grids = {
     #         "splitter": ["random"],
     #         "max_leaf_nodes": [None],
     #         "min_samples_leaf": [1]
-    #     }
-    # },
-    # "NaiveBayes": {
-    #     "model": GaussianNB(),
-    #     "params": {
-    #         # "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1]
-
-    #         "var_smoothing": [1e-5]
-    #     }
-    # },
-    # "KNN": {
-    #     "model": KNeighborsClassifier(),
-    #     "params": {
-    #         # "n_neighbors": [3, 5, 7, 11],
-    #         "n_neighbors": [3],
-    #         "weights": ["distance"],
-    #         "p": [1],
-    #         "algorithm": ["auto"]
     #     }
     # },
     # "RandomForest": {
@@ -109,10 +109,10 @@ param_grids = {
             # "n_estimators": [50, 100, 200, 500, 1000, 1500, 2000, 5000],
             # "n_estimators": [300, 400, 500, 600, 700, 800, 900],
             # "max_depth": [3, 5, 7, 10, 12, 14, 15, 16, 18, 20, 22, 25, 30],
-            # "learning_rate": [0.0001, 0.001, 0.01, 0.1, 0.2, 0.5, 0.75, 1.0],
+            # "learning_rate": [0.0001, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5, 0.75, 1.0],
             # "min_child_weight": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
             # "gamma": [0, 0.1, 0.5, 1, 5, 10],
-            # "scale_pos_weight": [1, 2, 3, 4, 5, 6, 8, 10],
+            # "scale_pos_weight": [1, 10, 20, 30, 40, 50, 100],
 
             "n_estimators": [1000],
             "max_depth": [15],
@@ -120,7 +120,7 @@ param_grids = {
             "min_child_weight": [1],
             "gamma": [1.0],
             "subsample": [0.8],
-            "scale_pos_weight": [4]
+            "scale_pos_weight": [2, 4, 6, 8, 10, 12, 14, 16, 18]
         }
     }
 }
@@ -133,7 +133,7 @@ SMOTE_DIRECTORY_PATH = paths.SMOTE20_DIRECTORY_PATH
 
 # Caricamento del training set preprocessato (bilanciato al 20% con SMOTE)
 print("Loading balanced preprocessed training set...")
-train_resampled = pd.read_csv(SMOTE_PREP_TRAIN_PATH)
+train_resampled = pd.read_csv(paths.PREP_TRAIN_PATH)
 y_train_res = train_resampled["isFraud"]
 X_train_res = train_resampled.drop(columns=["isFraud"])
 
@@ -254,17 +254,15 @@ for name, cfg in param_grids.items():
 
     # Salvo i risultati su file CSV
     print("Saving results to CSV...")
-    file_path = f"model_results/{name}_{const.TARGET_MINORITY_RATIO_1_5*100}.csv"
-    aux_path = f"model_results/{name}_aux.csv"
+    # file_path = f"model_results/{name}_{const.TARGET_MINORITY_RATIO_1_5*100}.csv"
+    file_path = f"model_results/{name}_{0.0}.csv"
+    aux_path = f"model_results/{name}_{0.0}_aux.csv"
     if os.path.exists(file_path):
         df_metrics.to_csv(file_path, mode='a', index=False, header=False)
     else:
         df_metrics.to_csv(file_path, index=False)
     if os.path.exists(aux_path):
-        # Scrivo in append mode senza header, lasciando una riga vuota prima
-        with open(aux_path, mode='a') as f:
-            f.write('\n')
-        f.close()
+        with open(aux_path, mode='a') as f: f.write('\n'); f.close()
         df_metrics_aux.to_csv(aux_path, mode='a', index=False, header=False)
     else:
         df_metrics_aux.to_csv(aux_path, index=False)
