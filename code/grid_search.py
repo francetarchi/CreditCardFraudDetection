@@ -35,74 +35,75 @@ print("\nINIZIALIZING OPERATIONS:")
 # Instanziazione dei modelli con relativi parametri
 print("Instantiating models...")
 param_grids = {
-    # "KNN": {
-    #     "model": KNeighborsClassifier(),
-    #     "params": {
-    #         # "n_neighbors": [3, 5, 7, 11],
-    #         "n_neighbors": [3],
-    #         "weights": ["distance"],
-    #         "p": [1],
-    #         "algorithm": ["auto"]
-    #     }
-    # },
-    # "NaiveBayes": {
-    #     "model": GaussianNB(),
-    #     "params": {
-    #         # "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1]
+    "KNN": {
+        "model": KNeighborsClassifier(),
+        "params": {
+            # "n_neighbors": [3, 5, 7, 11],
 
-    #         "var_smoothing": [1e-5]
-    #     }
-    # },
-    # "DecisionTree": {
-        # "model": DecisionTreeClassifier(random_state=const.RANDOM_STATE),
-    #     "params": {
-    #         # "max_depth": [3, 5, 10, None],
-    #         # "min_samples_split": [2, 5, 10],
-    #         # "criterion": ["gini", "entropy", "log_loss"],
-    #         # "splitter": ["best", "random"],
-    #         # "max_leaf_nodes": [None, 10, 20, 30],
-    #         # "min_samples_leaf": [1, 2, 5]
+            "n_neighbors": [3],
+            "weights": ["distance"],
+            "p": [1],
+            "algorithm": ["auto"]
+        }
+    },
+    "NaiveBayes": {
+        "model": GaussianNB(),
+        "params": {
+            # "var_smoothing": [1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1]
 
-    #         "max_depth": [None],
-    #         "min_samples_split": [2],
-    #         "criterion": ["entropy"],
-    #         "splitter": ["random"],
-    #         "max_leaf_nodes": [None],
-    #         "min_samples_leaf": [1]
-    #     }
-    # },
-    # "RandomForest": {
-    #     "model": RandomForestClassifier(random_state=const.RANDOM_STATE),
-    #     "params": {
-    #         # "max_depth": [5, 10, None],
-    #         # "n_estimators": [50, 100, 200, 500, 1000, 2000, 5000],
-    #         # "criterion": ['entropy', 'gini'],
-    #         # 'max_leaf_nodes': [None, 10, 20, 30],
-    #         # 'max_samples': [None, 0.5, 0.9],
-    #         # 'min_samples_split': [2, 5, 10],
-    #         # 'min_impurity_decrease': [0.0, 0.1, 0.2],
-    #         # "bootstrap": [False, True],
+            "var_smoothing": [1e-5]
+        }
+    },
+    "DecisionTree": {
+        "model": DecisionTreeClassifier(random_state=const.RANDOM_STATE),
+        "params": {
+            # "max_depth": [3, 5, 10, None],
+            # "min_samples_split": [2, 5, 10],
+            # "criterion": ["gini", "entropy", "log_loss"],
+            # "splitter": ["best", "random"],
+            # "max_leaf_nodes": [None, 10, 20, 30],
+            # "min_samples_leaf": [1, 2, 5]
 
-    #         "n_estimators": [1000],
-    #         "max_depth": [None],
-    #         "criterion": ['gini'],
-    #         'max_leaf_nodes':  [None],
-    #         'max_samples': [None],
-    #         'min_samples_split': [5],
-    #         'min_impurity_decrease': [0.0],
-    #         "bootstrap": [False]
-    #     }
-    # },
-    # "AdaBoost": {
-    #     "model": AdaBoostClassifier(random_state=const.RANDOM_STATE),
-    #     "params": {
-    #         "n_estimators": [50, 100, 200, 500, 1000, 1500, 2000, 5000],
-    #         "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
+            "max_depth": [None],
+            "min_samples_split": [2],
+            "criterion": ["entropy"],
+            "splitter": ["random"],
+            "max_leaf_nodes": [None],
+            "min_samples_leaf": [1]
+        }
+    },
+    "RandomForest": {
+        "model": RandomForestClassifier(random_state=const.RANDOM_STATE),
+        "params": {
+            # "max_depth": [5, 10, None],
+            # "n_estimators": [50, 100, 200, 500, 1000, 2000, 5000],
+            # "criterion": ['entropy', 'gini'],
+            # 'max_leaf_nodes': [None, 10, 20, 30],
+            # 'max_samples': [None, 0.5, 0.9],
+            # 'min_samples_split': [2, 5, 10],
+            # 'min_impurity_decrease': [0.0, 0.1, 0.2],
+            # "bootstrap": [False, True],
 
-    #         # "n_estimators": [200],
-    #         # "learning_rate": [1.0]
-    #     }
-    # },
+            "n_estimators": [1000],
+            "max_depth": [None],
+            "criterion": ['gini'],
+            'max_leaf_nodes':  [None],
+            'max_samples': [None],
+            'min_samples_split': [5],
+            'min_impurity_decrease': [0.0],
+            "bootstrap": [False]
+        }
+    },
+    "AdaBoost": {
+        "model": AdaBoostClassifier(random_state=const.RANDOM_STATE),
+        "params": {
+            # "n_estimators": [50, 100, 200, 500, 1000, 1500, 2000, 5000],
+            # "learning_rate": [0.01, 0.1, 0.5, 0.75, 1.0]
+
+            "n_estimators": [5000],
+            "learning_rate": [1.0]
+        }
+    },
     "XGBoost": {
         "model": XGBClassifier(random_state=const.RANDOM_STATE),
         "params": {
@@ -120,7 +121,7 @@ param_grids = {
             "min_child_weight": [1],
             "gamma": [1.0],
             "subsample": [0.8],
-            "scale_pos_weight": [2, 4, 6, 8, 10, 12, 14, 16, 18]
+            "scale_pos_weight": [4]
         }
     }
 }
@@ -133,7 +134,7 @@ SMOTE_DIRECTORY_PATH = paths.SMOTE20_DIRECTORY_PATH
 
 # Caricamento del training set preprocessato (bilanciato al 20% con SMOTE)
 print("Loading balanced preprocessed training set...")
-train_resampled = pd.read_csv(paths.PREP_TRAIN_PATH)
+train_resampled = pd.read_csv(SMOTE_PREP_TRAIN_PATH)
 y_train_res = train_resampled["isFraud"]
 X_train_res = train_resampled.drop(columns=["isFraud"])
 
@@ -254,9 +255,8 @@ for name, cfg in param_grids.items():
 
     # Salvo i risultati su file CSV
     print("Saving results to CSV...")
-    # file_path = f"model_results/{name}_{const.TARGET_MINORITY_RATIO_1_5*100}.csv"
-    file_path = f"model_results/{name}_{0.0}.csv"
-    aux_path = f"model_results/{name}_{0.0}_aux.csv"
+    file_path = f"model_results/{name}_{const.TARGET_MINORITY_RATIO_1_5*100}.csv"
+    aux_path = f"model_results/{name}_{const.TARGET_MINORITY_RATIO_1_5*100}_aux.csv"
     if os.path.exists(file_path):
         df_metrics.to_csv(file_path, mode='a', index=False, header=False)
     else:
