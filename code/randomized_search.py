@@ -36,31 +36,31 @@ print("\nINIZIALIZING OPERATIONS:")
 # Instanziazione dei modelli con relativi parametri
 print("Instantiating models...")
 param_grids = {
-    "DecisionTree": {
-        "model": DecisionTreeClassifier(random_state=const.RANDOM_STATE),
-        "params": {
-            # "max_depth": randint(3, 50),
-            "min_samples_split": randint(1, 10),
-            "criterion": ["gini", "entropy", "log_loss"],
-            "splitter": ["best", "random"],
-            # "max_leaf_nodes": randint(10, 200),
-            "min_samples_leaf": randint(1, 6)
+    # "DecisionTree": {
+    #     "model": DecisionTreeClassifier(random_state=const.RANDOM_STATE),
+    #     "params": {
+    #         # "max_depth": randint(3, 50),
+    #         "min_samples_split": randint(1, 10),
+    #         "criterion": ["gini", "entropy", "log_loss"],
+    #         "splitter": ["best", "random"],
+    #         # "max_leaf_nodes": randint(10, 200),
+    #         "min_samples_leaf": randint(1, 6)
 
-            # "max_depth": [3, 5, 10, None],
-            # "min_samples_split": [2, 5, 10],
-            # "criterion": ["gini", "entropy", "log_loss"],
-            # "splitter": ["best", "random"],
-            # "max_leaf_nodes": [None, 10, 20, 30],
-            # "min_samples_leaf": [1, 2, 5]
+    #         # "max_depth": [3, 5, 10, None],
+    #         # "min_samples_split": [2, 5, 10],
+    #         # "criterion": ["gini", "entropy", "log_loss"],
+    #         # "splitter": ["best", "random"],
+    #         # "max_leaf_nodes": [None, 10, 20, 30],
+    #         # "min_samples_leaf": [1, 2, 5]
 
-            # "max_depth": [None],
-            # "min_samples_split": [2],
-            # "criterion": ["entropy"],
-            # "splitter": ["random"],
-            # "max_leaf_nodes": [None],
-            # "min_samples_leaf": [1]
-        }
-    },
+    #         # "max_depth": [None],
+    #         # "min_samples_split": [2],
+    #         # "criterion": ["entropy"],
+    #         # "splitter": ["random"],
+    #         # "max_leaf_nodes": [None],
+    #         # "min_samples_leaf": [1]
+    #     }
+    # },
     # "NaiveBayes": {
     #     "model": GaussianNB(),
     #     "params": {
@@ -111,25 +111,29 @@ param_grids = {
     #         # "learning_rate": [1.0]
     #     }
     # },
-    # "XGBoost": {
-    #     "model": XGBClassifier(random_state=const.RANDOM_STATE),
-    #     "params": {
-    #         # "n_estimators": [50, 100, 200, 500, 1000, 1500, 2000, 5000],
-    #         # "n_estimators": [300, 400, 500, 600, 700, 800, 900],
-    #         # "max_depth": [3, 5, 7, 10, 12, 14, 16, 18, 20, 22, 25, 30],
-    #         # "learning_rate": [0.0001, 0.001, 0.01, 0.1, 0.2, 0.5, 0.75, 1.0],
-    #         # "min_child_weight": [1, 3, 5],
-    #         # "gamma": [0, 0.1, 0.2],
-    #         # "scale_pos_weight": [1, 2, 3, 4, 5, 6, 8, 10],
+    "XGBoost": {
+        "model": XGBClassifier(random_state=const.RANDOM_STATE),
+        "params": {
+            # "n_estimators": [50, 100, 200, 500, 1000, 1500, 2000, 5000],
+            "n_estimators": randint(100, 1000),
+            # "n_estimators": [300, 400, 500, 600, 700, 800, 900],
+            # "max_depth": [3, 5, 7, 10, 12, 14, 16, 18, 20, 22, 25, 30],
+            # "learning_rate": [0.0001, 0.001, 0.01, 0.1, 0.2, 0.5, 0.75, 1.0],
+            "learning_rate": loguniform(0.01, 0.5),
+            # "min_child_weight": [1, 3, 5],
+            "min_child_weight": randint(1, 10),
+            # "gamma": [0, 0.1, 0.2],
+            "gamma": uniform(0, 0.5),
+            # "scale_pos_weight": [1, 2, 3, 4, 5, 6, 8, 10],
 
-    #         # "n_estimators": [500],
-    #         # "max_depth": [0],
-    #         # "learning_rate": [0.05],
-    #         # "min_child_weight": [1],
-    #         # "gamma": [0],
-    #         # "scale_pos_weight": [5]
-    #     }
-    # }
+            # "n_estimators": [500],
+            # "max_depth": [0],
+            # "learning_rate": [0.05],
+            # "min_child_weight": [1],
+            # "gamma": [0],
+            # "scale_pos_weight": [5]
+        }
+    }
 }
 
 
@@ -162,7 +166,7 @@ for name, cfg in param_grids.items():
     print("Instantiating grid for RandomizedSearch...")
     # grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring="f1", refit="f1", n_jobs=-1, verbose=2, return_train_score=True)
 
-    grid = RandomizedSearchCV(cfg["model"], cfg["params"], n_iter=100, cv=5,scoring=const.SCORING, refit="f1", n_jobs=-1, verbose=2, random_state=42, return_train_score=True)
+    grid = RandomizedSearchCV(cfg["model"], cfg["params"], n_iter=50, cv=5,scoring=const.SCORING, refit="f1", n_jobs=-1, verbose=2, random_state=42, return_train_score=True)
 
     print(f"Finding best hyper-parameters with RandomizedSearch...")
     grid.fit(X_train_res, y_train_res)
