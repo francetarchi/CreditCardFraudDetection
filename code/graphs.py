@@ -57,25 +57,25 @@ for name, path in model_paths.items():
 tot = len(models)
 print(f"  --> Models loaded: {list(models.keys())} (total: {tot})")
 
-# # Generazione e salvataggio delle predizioni per tutti i modelli
-# i = 1
-# y_pred = {}
-# print("Generating predictions for all models...")
-# for model_name, model in models.items():
-#     print(f"  --> Processing predictions for {model_name}...")
+# Generazione e salvataggio delle predizioni per tutti i modelli
+i = 1
+y_pred = {}
+print("Generating predictions for all models...")
+for model_name, model in models.items():
+    print(f"  --> Processing predictions for {model_name}...")
 
-#     # Probabilità della classe positiva
-#     y_pred[model_name] = model.predict_proba(X_test)[:, 1]
-#     print(f"  --> Predictions done for {model_name} ({i}/{tot}).")
+    # Probabilità della classe positiva
+    y_pred[model_name] = model.predict_proba(X_test)[:, 1]
+    print(f"  --> Predictions done for {model_name} ({i}/{tot}).")
 
-#     i += 1
-# print("Saving predictions to CSV...")
-# predictions_df = pd.DataFrame(y_pred)
-# predictions_df.to_csv(paths.PREDICTIONS_PATH, index=False)
+    i += 1
+print("Saving predictions to CSV...")
+predictions_df = pd.DataFrame(y_pred)
+predictions_df.to_csv(paths.PREDICTIONS_PATH, index=False)
 
-# Caricamento delle predizioni salvate
-print("Loading saved predictions...")
-y_pred = pd.read_csv(paths.PREDICTIONS_PATH).to_dict(orient='list')
+# # Caricamento delle predizioni salvate
+# print("Loading saved predictions...")
+# y_pred = pd.read_csv(paths.PREDICTIONS_PATH).to_dict(orient='list')
 
 # Caricamento delle statistiche dei modelli
 print("Loading model statistics...")
