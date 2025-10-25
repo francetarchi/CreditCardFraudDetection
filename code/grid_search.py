@@ -154,7 +154,7 @@ for name, cfg in param_grids.items():
     print(f"\nModel: {name}")
     
     print("Instantiating grid for GridSearch...")
-    grid = GridSearchCV(cfg["model"], cfg["params"], cv=5, scoring=const.SCORING, refit="f1", n_jobs=-1, verbose=2, return_train_score=True)
+    grid = GridSearchCV(cfg["model"], cfg["params"], cv=10, scoring=const.SCORING, refit="f1", n_jobs=-1, verbose=2, return_train_score=True)
     
     print(f"Finding best hyper-parameters with GridSearch...")
     grid.fit(X_train_res, y_train_res)
