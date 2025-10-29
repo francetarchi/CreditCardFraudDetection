@@ -10,6 +10,9 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from xgboost import XGBClassifier
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 
 import paths
 import constants as const
@@ -107,4 +110,77 @@ with open("model_results/t_test_results_roc_auc.csv", mode="w", newline="") as f
     writer.writerow(["Model_A", "Model_B", "T_statistic", "P_value"])
     writer.writerows(t_test_results_roc_auc)
 
+t_test_results_f1 = pd.read_csv("model_results/t_test_results_f1.csv").to_dict(orient="list")
+t_test_results_roc_auc = pd.read_csv("model_results/t_test_results_roc_auc.csv").to_dict(orient="list")
 
+# Visualizzo i risultati del t-test F1 e ROC AUC con due heatmap dei p-value
+models_names = list(models.keys())
+
+p_matrix_f1 = pd.DataFrame(np.ones((len(models_names), len(models_names))), index=models_names, columns=models_names)
+p_matrix_roc_auc = pd.DataFrame(np.ones((len(models_names), len(models_names))), index=models_names, columns=models_names)
+
+for i in range(len(t_test_results_f1["Model_A"])):
+    model_a = t_test_results_f1["Model_A"][i]
+    model_b = t_test_results_f1["Model_B"][i]
+    p_value_f1 = t_test_results_f1["P_value"][i]
+    p_value_roc_auc = t_test_results_roc_auc["P_value"][i]
+    
+    p_matrix_f1.loc[model_a, model_b] = p_value_f1
+    p_matrix_f1.loc[model_b, model_a] = p_value_f1
+    
+    p_matrix_roc_auc.loc[model_a, model_b] = p_value_roc_auc
+    p_matrix_roc_auc.loc[model_b, model_a] = p_value_roc_auc
+
+plt.figure(figsize=(25, 10))
+plt.subplot(1, 2, 1)
+np.fill_diagonal(p_matrix_f1.values, np.nan)
+sns.heatmap(p_matrix_f1, annot=True, fmt=".4f", cmap="RdYlGn_r", mask=p_matrix_f1.isnull(), cbar_kws={"label": "P-value"}, vmin=0, vmax=0.1)
+plt.title("T-test P-values for F1 Score")
+plt.xlabel("Model B")
+plt.ylabel("Model A")
+
+plt.subplot(1, 2, 2)
+np.fill_diagonal(p_matrix_roc_auc.values, np.nan)
+sns.heatmap(p_matrix_roc_auc, annot=True, fmt=".4f", cmap="RdYlGn_r", mask=p_matrix_roc_auc.isnull(), cbar_kws={"label": "P-value"}, vmin=0, vmax=0.1)
+plt.title("T-test P-values for ROC AUC")
+plt.xlabel("Model B")
+plt.ylabel("Model A")
+
+plt.savefig("model_results/t_test_p_value_heatmaps.svg", bbox_inches='tight')
+plt.show()
+
+np.fill_diagonal(p_matrix_f1.values, 1)
+np.fill_diagonal(p_matrix_roc_auc.values, 1)
+# Mask per evidenziare solo i valori significativi
+mask_f1 = p_matrix_f1 >= 0.05
+mask_roc_auc = p_matrix_roc_auc >= 0.05 
+t_matrix_f1 = pd.DataFrame(np.zeros((len(models_names), len(models_names))), index=models_names, columns=models_names)
+t_matrix_roc_auc = pd.DataFrame(np.zeros((len(models_names), len(models_names))), index=models_names, columns=models_names)
+
+for i in range(len(t_test_results_f1["Model_A"])):
+    model_a = t_test_results_f1["Model_A"][i]
+    model_b = t_test_results_f1["Model_B"][i]
+    t_stat_f1 = t_test_results_f1["T_statistic"][i]
+    t_stat_roc_auc = t_test_results_roc_auc["T_statistic"][i]
+    
+    t_matrix_f1.loc[model_a, model_b] = t_stat_f1
+    t_matrix_f1.loc[model_b, model_a] = -t_stat_f1
+    
+    t_matrix_roc_auc.loc[model_a, model_b] = t_stat_roc_auc
+    t_matrix_roc_auc.loc[model_b, model_a] = -t_stat_roc_auc
+
+plt.figure(figsize=(25, 10))
+plt.subplot(1, 2, 1)
+sns.heatmap(t_matrix_f1, annot=True, fmt=".4f", cmap="RdYlGn", mask=mask_f1, cbar_kws={"label": "T-statistic"}, vmin=-130, vmax=110)
+plt.title("T-test T-statistics for F1 Score (p-value < 0.05)")
+plt.xlabel("Model B")
+plt.ylabel("Model A")
+
+plt.subplot(1, 2, 2)
+sns.heatmap(t_matrix_roc_auc, annot=True, fmt=".4f", cmap="RdYlGn", mask=mask_roc_auc, cbar_kws={"label": "T-statistic"}, vmin=-130, vmax=110)
+plt.title("T-test T-statistics for ROC AUC (p-value < 0.05)")
+plt.xlabel("Model B")
+plt.ylabel("Model A")
+
+plt.savefig("model_results/t_test_t_statistic_heatmaps.svg", bbox_inches='tight')
+plt.show()
