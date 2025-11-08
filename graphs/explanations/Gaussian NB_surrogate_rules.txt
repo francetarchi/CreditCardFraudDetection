@@ -1,0 +1,22 @@
+|--- feature_56 <= 0.23
+|   |--- feature_34 <= 3.41
+|   |   |--- feature_57 <= 0.15
+|   |   |   |--- class: 0
+|   |   |--- feature_57 >  0.15
+|   |   |   |--- class: 0
+|   |--- feature_34 >  3.41
+|   |   |--- feature_57 <= -0.96
+|   |   |   |--- class: 0
+|   |   |--- feature_57 >  -0.96
+|   |   |   |--- class: 1
+|--- feature_56 >  0.23
+|   |--- feature_57 <= 0.85
+|   |   |--- feature_56 <= 1.19
+|   |   |   |--- class: 1
+|   |   |--- feature_56 >  1.19
+|   |   |   |--- class: 1
+|   |--- feature_57 >  0.85
+|   |   |--- feature_7 <= 0.50
+|   |   |   |--- class: 0
+|   |   |--- feature_7 >  0.50
+|   |   |   |--- class: 1
