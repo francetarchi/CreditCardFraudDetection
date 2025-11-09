@@ -3,6 +3,7 @@ import joblib
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 from sklearn.metrics import roc_curve, auc, precision_recall_curve, average_precision_score
 
 import paths
@@ -90,7 +91,13 @@ for index, row in model_stats.iterrows():
     cm = np.array(ast.literal_eval(row['Confusion Matrix']))
 
     fig, ax = plt.subplots(figsize=(7.5, 5.2))
-    im = ax.imshow(cm, cmap='Blues', alpha=0.85)
+    im = ax.imshow(cm, cmap='Blues', alpha=0.85, norm=LogNorm(vmin=2000, vmax=50000))
+
+    # Colorbar personalizzata
+    cbar = fig.colorbar(im, ax=ax)
+    cbar.set_ticks([2000, 3000, 5000, 10000, 20000, 30000, 40000, 50000])
+    cbar.set_ticklabels(['2000', '3000', '5000', '10000', '20000', '30000', '40000', '50000'])
+    cbar.ax.tick_params(labelsize=8)
 
     ax.set_title(f'Confusion Matrix - {model_name}', pad=12)
     ax.set_xlabel('Predicted')
@@ -101,10 +108,6 @@ for index, row in model_stats.iterrows():
     # Annotazioni dentro le celle
     for (i, j), value in np.ndenumerate(cm):
         ax.text(j, i, f'{value}', ha='center', va='center', fontsize=12)
-
-    # Colorbar con dimensione controllata
-    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.06)
-    cbar.ax.tick_params(labelsize=8)
 
     # Aggiusto margini manualmente per evitare tagli
     fig.subplots_adjust(left=0.18, right=0.96, top=0.88, bottom=0.18)
