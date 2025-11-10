@@ -14,7 +14,7 @@ TARGET_MINORITY_RATIO_1_3 = 0.33  # rapporto 1:3 (1 fraud ogni 3 non fraud)
 TARGET_MINORITY_RATIO_1_2 = 0.50  # rapporto 1:2 (1 fraud ogni 2 non fraud)
 
 MAX_SAMPLES_GLOBAL = 100    # massimo per SHAP / permutation
-MIN_MINORITY_KEEP = 10      # tengo almeno questo numero di frodi
+MIN_MINORITY_KEEP = 17      # tengo almeno questo numero di frodi
 
 TOP_N = 20  # numero di feature da mostrare nei grafici
 
