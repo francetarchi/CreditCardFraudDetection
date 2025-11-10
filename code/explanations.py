@@ -46,9 +46,11 @@ def make_stratified_sample(X: pd.DataFrame, y: pd.Series,
                            max_samples: int,
                            min_minority: int) -> Tuple[pd.DataFrame, pd.Series]:
     minority_mask = y == 1
+
     # righe con isFraud = 1
     X_minority = X[minority_mask]
     y_minority = y[minority_mask]
+    
     # righe con isFraud = 0
     X_majority = X[~minority_mask]
     y_majority = y[~minority_mask]
@@ -69,8 +71,8 @@ def make_stratified_sample(X: pd.DataFrame, y: pd.Series,
 
     X_sample = pd.concat([X_minority, X_majority])
     y_sample = pd.concat([y_minority, y_majority])
-    X_sample, y_sample = shuffle(X_sample, y_sample, random_state=const.RANDOM_STATE)
-    return X_sample, y_sample
+    X_sample, y_sample = shuffle(X_sample, y_sample, random_state=const.RANDOM_STATE) # type: ignore
+    return X_sample, y_sample # type: ignore
 
 # Campione per spiegazioni globali
 X_test_sample, y_test_sample = make_stratified_sample(X_test, y_test, const.MAX_SAMPLES_GLOBAL, const.MIN_MINORITY_KEEP)
