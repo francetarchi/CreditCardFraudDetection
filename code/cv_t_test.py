@@ -26,9 +26,9 @@ y = df["isFraud"]
 
 # Modelli da valutare (con iperparametri ottimizzati)
 models = {
-    "DecisionTree": DecisionTreeClassifier(criterion="entropy", max_depth=None, max_leaf_nodes=None, min_samples_leaf=1, min_samples_split=2, splitter="random"),
-    "GaussianNB": GaussianNB(var_smoothing=1e-05),
     "KNN": KNeighborsClassifier(algorithm="auto", n_neighbors=3, p=1, weights="distance"),
+    "GaussianNB": GaussianNB(var_smoothing=1e-05),
+    "DecisionTree": DecisionTreeClassifier(criterion="entropy", max_depth=None, max_leaf_nodes=None, min_samples_leaf=1, min_samples_split=2, splitter="random"),
     "RandomForest": RandomForestClassifier(bootstrap=False, criterion="gini", max_depth=None, max_leaf_nodes=None, max_samples=None, min_impurity_decrease=0.0, min_samples_split=5, n_estimators=1000),
     "AdaBoost": AdaBoostClassifier(learning_rate=1.0, n_estimators=5000),
     "XGBoost": XGBClassifier(gamma=1.0, learning_rate=0.05, max_depth=15, min_child_weight=1, n_estimators=1000, scale_pos_weight=4, subsample=0.8)
