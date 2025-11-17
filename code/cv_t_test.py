@@ -1,7 +1,8 @@
 import csv
 import pandas as pd
 import itertools
-from scipy.stats import ttest_rel
+# from scipy.stats import ttest_rel
+from scipy.stats import t
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
 from sklearn.metrics import f1_score, roc_auc_score
 from sklearn.model_selection import StratifiedKFold
@@ -23,7 +24,6 @@ df = pd.read_csv(paths.PREP_TRAIN_PATH)
 X = df.drop(columns=["isFraud"])
 y = df["isFraud"]
 
-
 # Modelli da valutare (con iperparametri ottimizzati)
 models = {
     "KNN": KNeighborsClassifier(algorithm="auto", n_neighbors=3, p=1, weights="distance"),
@@ -33,6 +33,36 @@ models = {
     "AdaBoost": AdaBoostClassifier(learning_rate=1.0, n_estimators=5000),
     "XGBoost": XGBClassifier(gamma=1.0, learning_rate=0.05, max_depth=15, min_child_weight=1, n_estimators=1000, scale_pos_weight=4, subsample=0.8)
 }
+
+# Calcolo dimensioni per la correzione statistica
+n_total = len(X)
+n_splits = 10
+n_test_avg = n_total / n_splits       # Dimensione media test set (1/10)
+n_train_avg = n_total - n_test_avg    # Dimensione media train set (9/10)
+
+def corrected_paired_ttest(scores_a, scores_b, n_train, n_test):
+    # Differenza punto a punto
+    diff = np.array(scores_a) - np.array(scores_b)
+    n = len(diff)
+    
+    mean_diff = np.mean(diff)
+    var_diff = np.var(diff, ddof=1)
+    
+    # Fattore di correzione per la dipendenza tra training set
+    correction = (1/n) + (n_test/n_train)
+    
+    # Si evitano divisioni per zero se i modelli sono identici
+    if var_diff == 0:
+        return 0.0, 1.0
+        
+    # Calcolo t-statistica corretta
+    t_stat = mean_diff / np.sqrt(correction * var_diff)
+    
+    # Calcolo p-value
+    df = n - 1
+    p_val = 2 * (1 - t.cdf(abs(t_stat), df))
+    
+    return t_stat, p_val
 
 # Cross-validation con 10 fold
 kf = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
@@ -86,12 +116,13 @@ t_test_results_roc_auc = []
 for model_a, model_b in all_possible_pairs:
     f1_a = results_f1[model_a]
     f1_b = results_f1[model_b]
-    t_stat, p_val = ttest_rel(f1_a, f1_b)
+    # t_stat, p_val = ttest_rel(f1_a, f1_b)
+    t_stat, p_val = corrected_paired_ttest(f1_a, f1_b, n_train_avg, n_test_avg)
     t_test_results_f1.append((model_a, model_b, t_stat, p_val))
     print(f"{model_a} vs {model_b} - t: {t_stat}, p: {p_val}")
 
 # Salvo i risultati del t-test in un file CSV
-with open("model_results/t_test_results_f1.csv", mode="w", newline="") as file:
+with open("model_results/corrected_t_test_results_f1.csv", mode="w", newline="") as file:
     writer = csv.writer(file)
     writer.writerow(["Model_A", "Model_B", "T_statistic", "P_value"])
     writer.writerows(t_test_results_f1)
@@ -100,18 +131,19 @@ with open("model_results/t_test_results_f1.csv", mode="w", newline="") as file:
 for model_a, model_b in all_possible_pairs:
     roc_auc_a = results_roc_auc[model_a]
     roc_auc_b = results_roc_auc[model_b]
-    t_stat, p_val = ttest_rel(roc_auc_a, roc_auc_b)
+    # t_stat, p_val = ttest_rel(roc_auc_a, roc_auc_b)
+    t_stat, p_val = corrected_paired_ttest(roc_auc_a, roc_auc_b, n_train_avg, n_test_avg)
     t_test_results_roc_auc.append((model_a, model_b, t_stat, p_val))
     print(f"{model_a} vs {model_b} - t: {t_stat}, p: {p_val}")
 
 # Salvo i risultati del t-test in un file CSV
-with open("model_results/t_test_results_roc_auc.csv", mode="w", newline="") as file:
+with open("model_results/corrected_t_test_results_roc_auc.csv", mode="w", newline="") as file:
     writer = csv.writer(file)
     writer.writerow(["Model_A", "Model_B", "T_statistic", "P_value"])
     writer.writerows(t_test_results_roc_auc)
 
-t_test_results_f1 = pd.read_csv("model_results/t_test_results_f1.csv").to_dict(orient="list")
-t_test_results_roc_auc = pd.read_csv("model_results/t_test_results_roc_auc.csv").to_dict(orient="list")
+t_test_results_f1 = pd.read_csv("model_results/corrected_t_test_results_f1.csv").to_dict(orient="list")
+t_test_results_roc_auc = pd.read_csv("model_results/corrected_t_test_results_roc_auc.csv").to_dict(orient="list")
 
 # Visualizzo i risultati del t-test F1 e ROC AUC con due heatmap dei p-value
 models_names = list(models.keys())
@@ -146,7 +178,7 @@ plt.title("T-test P-values for ROC AUC")
 plt.xlabel("Model B")
 plt.ylabel("Model A")
 
-plt.savefig("model_results/t_test_p_value_heatmaps.svg", bbox_inches='tight')
+plt.savefig("model_results/corrected_t_test_p_value_heatmaps.svg", bbox_inches='tight')
 plt.show()
 
 np.fill_diagonal(p_matrix_f1.values, 1)
@@ -182,5 +214,5 @@ plt.title("T-test T-statistics for ROC AUC (p-value < 0.05)")
 plt.xlabel("Model B")
 plt.ylabel("Model A")
 
-plt.savefig("model_results/t_test_t_statistic_heatmaps.svg", bbox_inches='tight')
+plt.savefig("model_results/corrected_t_test_t_statistic_heatmaps.svg", bbox_inches='tight')
 plt.show()
