@@ -36,13 +36,13 @@ for i, model_name in enumerate(models):
     ax.get_lines()[0].set_markerfacecolor('blue')
     ax.get_lines()[0].set_markersize(5.0)
 
-plt.suptitle("Q-Q Plots: Points should follow the red line", fontsize=16, y=1.02)
-plt.savefig("model_results/shapiro_qq_plots.svg", bbox_inches='tight')
+plt.suptitle("Q-Q Plots: Points should follow the red line (ROC AUC Scores)", fontsize=16, y=1.02)
+plt.savefig("model_results/shapiro_qq_plots_roc_auc.svg", bbox_inches='tight')
 plt.show()
 
 
 print("\n" + "="*60)
-print("ANALYSIS OF DIFFERENCES (Requirement for T-test)")
+print("ANALYSIS OF DIFFERENCES on ROC AUC Scores (Requirement for T-test)")
 print("="*60)
 
 results_diff = []
@@ -86,6 +86,6 @@ sns.heatmap(matrix_p, annot=True, fmt=".3f", cmap="RdYlGn", vmin=0, vmax=0.1,
             cbar_kws={'label': 'Shapiro P-value (Green > 0.05 = Normal)'},
             mask=mask)
 
-plt.title("P-values of Shapiro-Wilk test on Differences between Model Pairs", fontsize=16)
-plt.savefig("model_results/shapiro_heatmap_differences.svg", bbox_inches='tight')
+plt.title("P-values of Shapiro-Wilk test on Differences between Model Pairs on ROC AUC Scores", fontsize=16)
+plt.savefig("model_results/shapiro_heatmap_differences_roc_auc.svg", bbox_inches='tight')
 plt.show()
