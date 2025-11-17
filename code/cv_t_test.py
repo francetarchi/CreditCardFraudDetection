@@ -65,43 +65,43 @@ def corrected_paired_ttest(scores_a, scores_b, n_train, n_test):
     return t_stat, p_val
 
 # Cross-validation con 10 fold
-kf = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
+# kf = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
 
-smote = SMOTE(random_state=const.RANDOM_STATE, sampling_strategy=const.TARGET_MINORITY_RATIO_1_5)
+# smote = SMOTE(random_state=const.RANDOM_STATE, sampling_strategy=const.TARGET_MINORITY_RATIO_1_5)
 
-results_f1 = {name: [] for name in models}
-results_roc_auc = {name: [] for name in models}
+# results_f1 = {name: [] for name in models}
+# results_roc_auc = {name: [] for name in models}
 
-for train_idx, test_idx in kf.split(X, y):
-    X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
-    y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
+# for train_idx, test_idx in kf.split(X, y):
+#     X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+#     y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
 
-    # Applico SMOTE solo sul training set
-    X_train, y_train = smote.fit_resample(X_train, y_train)
+#     # Applico SMOTE solo sul training set
+#     X_train, y_train = smote.fit_resample(X_train, y_train)
     
-    for name, model in models.items():
-        print("Fold:", len(results_f1[name]) + 1, "Model:", name)
-        model.fit(X_train, y_train)
+#     for name, model in models.items():
+#         print("Fold:", len(results_f1[name]) + 1, "Model:", name)
+#         model.fit(X_train, y_train)
 
-        y_pred = model.predict(X_test)
-        y_prob = model.predict_proba(X_test)[:, 1] # Probabilità per la classe positiva
+#         y_pred = model.predict(X_test)
+#         y_prob = model.predict_proba(X_test)[:, 1] # Probabilità per la classe positiva
 
-        f1 = f1_score(y_test, y_pred, zero_division=0)
-        roc_auc = roc_auc_score(y_test, y_prob)
+#         f1 = f1_score(y_test, y_pred, zero_division=0)
+#         roc_auc = roc_auc_score(y_test, y_prob)
 
-        results_f1[name].append(f1)
-        results_roc_auc[name].append(roc_auc)
+#         results_f1[name].append(f1)
+#         results_roc_auc[name].append(roc_auc)
 
-        print(f"{name} F1 Score: {f1}")
-        print(f"{name} ROC AUC: {roc_auc}")
+#         print(f"{name} F1 Score: {f1}")
+#         print(f"{name} ROC AUC: {roc_auc}")
 
-df_results_f1 = pd.DataFrame(results_f1)
-df_results_f1.index = [f"Fold_{i+1}" for i in range(1, len(df_results_f1) + 1)]
-df_results_f1.to_csv("model_results/cv_results_f1.csv", index=False)
+# df_results_f1 = pd.DataFrame(results_f1)
+# df_results_f1.index = [f"Fold_{i+1}" for i in range(1, len(df_results_f1) + 1)]
+# df_results_f1.to_csv("model_results/cv_results_f1.csv", index=False)
 
-df_results_roc_auc = pd.DataFrame(results_roc_auc)
-df_results_roc_auc.index = [f"Fold_{i+1}" for i in range(1, len(df_results_roc_auc) + 1)]
-df_results_roc_auc.to_csv("model_results/cv_results_roc_auc.csv", index=False)
+# df_results_roc_auc = pd.DataFrame(results_roc_auc)
+# df_results_roc_auc.index = [f"Fold_{i+1}" for i in range(1, len(df_results_roc_auc) + 1)]
+# df_results_roc_auc.to_csv("model_results/cv_results_roc_auc.csv", index=False)
 
 results_f1 = pd.read_csv("model_results/cv_results_f1.csv").to_dict(orient="list")
 results_roc_auc = pd.read_csv("model_results/cv_results_roc_auc.csv").to_dict(orient="list")
@@ -167,14 +167,16 @@ plt.figure(figsize=(25, 10))
 plt.subplot(1, 2, 1)
 np.fill_diagonal(p_matrix_f1.values, np.nan)
 sns.heatmap(p_matrix_f1, annot=True, fmt=".4f", cmap="RdYlGn_r", mask=p_matrix_f1.isnull(), cbar_kws={"label": "P-value"}, vmin=0, vmax=0.1)
-plt.title("T-test P-values for F1 Score")
+# plt.title("T-test P-values for F1 Score")
+plt.title("Corrected t-test P-values for F1 Score")
 plt.xlabel("Model B")
 plt.ylabel("Model A")
 
 plt.subplot(1, 2, 2)
 np.fill_diagonal(p_matrix_roc_auc.values, np.nan)
 sns.heatmap(p_matrix_roc_auc, annot=True, fmt=".4f", cmap="RdYlGn_r", mask=p_matrix_roc_auc.isnull(), cbar_kws={"label": "P-value"}, vmin=0, vmax=0.1)
-plt.title("T-test P-values for ROC AUC")
+# plt.title("T-test P-values for ROC AUC")
+plt.title("Corrected t-test P-values for ROC AUC")
 plt.xlabel("Model B")
 plt.ylabel("Model A")
 
@@ -204,13 +206,15 @@ for i in range(len(t_test_results_f1["Model_A"])):
 plt.figure(figsize=(25, 10))
 plt.subplot(1, 2, 1)
 sns.heatmap(t_matrix_f1, annot=True, fmt=".4f", cmap="RdYlGn", mask=mask_f1, cbar_kws={"label": "T-statistic"}, vmin=-130, vmax=110)
-plt.title("T-test T-statistics for F1 Score (p-value < 0.05)")
+# plt.title("T-test T-statistics for F1 Score (p-value < 0.05)")
+plt.title("Corrected t-test T-statistics for F1 Score (p-value < 0.05)")
 plt.xlabel("Model B")
 plt.ylabel("Model A")
 
 plt.subplot(1, 2, 2)
 sns.heatmap(t_matrix_roc_auc, annot=True, fmt=".4f", cmap="RdYlGn", mask=mask_roc_auc, cbar_kws={"label": "T-statistic"}, vmin=-130, vmax=110)
-plt.title("T-test T-statistics for ROC AUC (p-value < 0.05)")
+# plt.title("T-test T-statistics for ROC AUC (p-value < 0.05)")
+plt.title("Corrected t-test T-statistics for ROC AUC (p-value < 0.05)")
 plt.xlabel("Model B")
 plt.ylabel("Model A")
 
