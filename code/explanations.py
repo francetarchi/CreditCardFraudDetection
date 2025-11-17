@@ -31,15 +31,14 @@ features = X_test.columns
 # Carico i modelli
 models = {
     "KNN": joblib.load(paths.KNN_PATH),
-    "GaussianNB": joblib.load(paths.NB_PATH),
-    "DecisionTree": joblib.load(paths.DT_PATH),
-    "RandomForest": joblib.load(paths.RF_PATH),
+    "Gaussian NB": joblib.load(paths.NB_PATH),
+    "Decision Tree": joblib.load(paths.DT_PATH),
+    "Random Forest": joblib.load(paths.RF_PATH),
     "AdaBoost": joblib.load(paths.ADA_PATH),
     "XGBoost": joblib.load(paths.XGB_PATH)
 }
 
-# Directory per salvare i grafici
-output_dir = "graphs/explanations"
+output_dir = "explanations"
 os.makedirs(output_dir, exist_ok=True)
 
 def make_stratified_sample(X: pd.DataFrame, y: pd.Series,
@@ -146,7 +145,7 @@ for name, model in models.items():
         surrogate = DecisionTreeClassifier(max_depth=3)
         surrogate.fit(X_train_sample, y_train_sample)
 
-        tree.plot_tree(surrogate, proportion=True)
+        tree.plot_tree(surrogate, feature_names=list(features), class_names=["Legit", "Fraud"], filled=True, rounded=True, fontsize=5)
         plt.title(f"Surrogate Decision Tree - {name}")
         plt.savefig(os.path.join(output_dir, f"{name}_surrogate_tree.svg"))
         plt.close()

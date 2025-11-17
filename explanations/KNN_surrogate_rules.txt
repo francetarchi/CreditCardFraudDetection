@@ -1,4 +1,4 @@
-|--- feature_56 <= 0.50
+|--- feature_55 <= 0.50
 |   |--- feature_9 <= 0.50
 |   |   |--- feature_59 <= 0.12
 |   |   |   |--- class: 0
@@ -9,7 +9,7 @@
 |   |   |   |--- class: 0
 |   |   |--- feature_34 >  3.41
 |   |   |   |--- class: 1
-|--- feature_56 >  0.50
+|--- feature_55 >  0.50
 |   |--- feature_7 <= 0.50
 |   |   |--- class: 0
 |   |--- feature_7 >  0.50
