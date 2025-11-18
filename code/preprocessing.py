@@ -195,8 +195,12 @@ var_thresh = VarianceThreshold(threshold=const.VARIANCE_THRESHOLD)
 X_train_sparse = var_thresh.fit_transform(X_train_sparse)
 X_test_sparse = var_thresh.transform(X_test_sparse)
 
-X_train = pd.DataFrame(X_train_sparse.toarray(), columns=feature_names[var_thresh.get_support()], index=y_train.index) # type: ignore
-X_test = pd.DataFrame(X_test_sparse.toarray(), columns=feature_names[var_thresh.get_support()], index=y_test.index) # type: ignore
+# ⬇⬇⬇ NEW: salviamo i nomi delle feature dopo variance threshold ⬇⬇⬇
+# feature_names è la lista delle colonne dopo ENCODOER
+feature_names_after_var = feature_names[var_thresh.get_support()]
+
+X_train = pd.DataFrame(X_train_sparse.toarray(), columns=feature_names_after_var, index=y_train.index) # type: ignore
+X_test = pd.DataFrame(X_test_sparse.toarray(), columns=feature_names_after_var, index=y_test.index) # type: ignore
 
 # Definisco una mask per features discrete/continue
 print("Creating dynamic mask for discrete features...")
@@ -220,12 +224,15 @@ plt.title("Feature Mutual Information scores (ordered)")
 plt.xlabel("Feature rank")
 plt.ylabel("MI score")
 plt.tight_layout()
-plt.savefig("graphs/mi_scores.png")
-plt.savefig("graphs_svg/mi_scores.svg")
+plt.savefig("mutual_info/mi_scores.png")
+plt.savefig("mutual_info/mi_scores.svg")
 
 # Mantengo i nomi delle features finali
 print("Keeping names of selected features...")
-selected_features = remaining_cols[selector.get_support()]
+# selected_features = remaining_cols[selector.get_support()]
+
+# ⬇⬇⬇ FIX: questa lista è quella da salvare e ricaricare nel preprocessing runtime ⬇⬇⬇
+selected_features = feature_names_after_var[selector.get_support()]
 
 # Ricostruisco DataFrame denso
 print("Rebuilding dense DataFrame...")
@@ -285,7 +292,10 @@ smote_prep_train.to_csv(SMOTED_TRAIN_PATH, index=False)
 
 # Salvo le feature selezionate
 print("Saving selected features to CSV...")
-pd.DataFrame(selected_features).to_csv(paths.SELECTED_FEATURES_PATH, index=False)
+# pd.DataFrame(selected_features).to_csv(paths.SELECTED_FEATURES_PATH, index=False)
+
+# ⬇⬇⬇ NEW: salviamo selected_features in un file .npy o pickle ⬇⬇⬇
+np.save(paths.SELECTED_FEATURES_PATH, selected_features)
 
 # Salvo oggetti di preprocessing già fittati
 print("Saving preprocessing objects...")
