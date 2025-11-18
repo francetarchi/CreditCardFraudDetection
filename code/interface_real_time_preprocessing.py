@@ -6,7 +6,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 from sklearn.feature_selection import mutual_info_classif
 
-# --- FIX 1: SILENZIAMO I WARNING NON BLOCCANTI ---
+
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
@@ -36,7 +36,6 @@ selector = joblib.load(paths.SELECTOR_PATH)
 
 # Carico le feature selezionate durante il preprocessing
 print("Loading selected features...")
-# selected_features = pd.read_csv(paths.SELECTED_FEATURES_PATH).values.ravel().tolist()
 selected_features = np.load(paths.SELECTED_FEATURES_PATH, allow_pickle=True)
 
 
@@ -56,7 +55,7 @@ def preprocess_user_input(df):
     df = df.replace(r'^\s*$', np.nan, regex=True)
     df = df.infer_objects()
     
-    # 2. Feature Engineering Temporale (CRUCIALE: deve essere fatto PRIMA dell'imputer)
+    # Feature Engineering Temporale
     if "TransactionDT" in df.columns:
         df["TransactionDT_days"] = df["TransactionDT"] / (24*60*60)
         hour = (df["TransactionDT"] // 3600) % 24
@@ -66,7 +65,7 @@ def preprocess_user_input(df):
         df["dayofweek_sin"] = np.sin(2 * np.pi * dayofweek / 7)
         df["dayofweek_cos"] = np.cos(2 * np.pi * dayofweek / 7)
 
-    # 3. Imputazione
+    # Imputazione
     # Recuperiamo i nomi delle colonne dall'imputer per mantenere coerenza
     cat_cols = imputer.transformers_[0][2]
     num_cols = imputer.transformers_[1][2]
@@ -79,21 +78,20 @@ def preprocess_user_input(df):
     # Convertiamo le colonne numeriche in float per lo scaler
     df_imputed[num_cols] = df_imputed[num_cols].astype(float)
 
-    # 4. Scaling
+    # Scaling
     scaled_array = scaler.transform(df_imputed)
     df_scaled = pd.DataFrame(scaled_array, columns=imputed_cols)
 
-    # 5. Encoding
+    # Encoding
     encoded_array = encoder.transform(df_scaled)
     
-    # 6. Variance Threshold
+    # Variance Threshold
     var_array = var_thresh.transform(encoded_array)
     
-    # 7. Feature Selection
+    # Feature Selection
     selected_array = selector.transform(var_array)
     
-    # 8. Creazione DataFrame Finale
-    # USIAMO LA LISTA DI FEATURE CORRETTA, NON .columns
+    # Creazione DataFrame Finale
     df_final = pd.DataFrame(selected_array.toarray(), columns=selected_features)
 
     return df_final
@@ -132,12 +130,12 @@ if st.button("Predict"):
 
    # Lista dei modelli con nomi
     models = {
-        "KNN": model_knn,
         "Gaussian NB": model_nb,
         "Decision Tree": model_dt,
         "Random Forest": model_rf,
         "AdaBoost": model_ada,
-        "XGBoost": model_xgb
+        "XGBoost": model_xgb,
+        "KNN": model_knn
     }
 
     # Predizioni
@@ -166,122 +164,23 @@ if st.button("Predict"):
     # SHAP explanations
     st.subheader("Explanations (per model):")
     for name, model in models.items():
-        st.subheader(f"Explanation for {name}")
-        if name in ["Random Forest", "Decision Tree", "XGBoost"]:
-            ##################### NEW ######################
-            background = shap.sample(X_train, 100, random_state=42)
-            explainer = shap.TreeExplainer(model, data=background, model_output='probability')
-            
-            # Usa l'explainer come callable per ottenere l'oggetto Explanation direttamente
-            # Questo incapsula values, base_values, data e feature_names automaticamente
-            explanation = explainer(df_input)
-            
-            # Per un modello di classificazione binaria, l'oggetto explanation avrà dimensioni:
-            # (n_samples, n_features, n_classes).
-            # Tu hai 1 sample (l'input utente) e vuoi la classe 1 (Fraud).
-            # Quindi selezioni: indice 0, tutte le feature, classe 1.
-            
-            # Verifica se l'output ha la dimensione delle classi (dipende dalla versione di SHAP/Modello)
-            if len(explanation.shape) == 3:
-                shap_explanation_single = explanation[0, :, 1]
-            else:
-                # Alcuni modelli/versioni potrebbero restituire direttamente l'output per la classe positiva
-                shap_explanation_single = explanation[0]
-            
-            fig, ax = plt.subplots()
-            # Passa l'oggetto Explanation affettato direttamente al plot
-            shap.plots.waterfall(shap_explanation_single, show=False, max_display=14)
-            st.pyplot(fig)
+        st.subheader(f"Explanation for {name}")        
+        # Usiamo 50 campioni per mantenere il calcolo veloce
+        background = smote_train_set.sample(50, random_state=42)
+        
+        # Allineamento colonne (sicurezza per evitare errori di feature mismatch)
+        if hasattr(model, "feature_names_in_"):
+            cols = model.feature_names_in_
+            background = background[cols]
+            df_input_aligned = df_input[cols]
+        else:
+            df_input_aligned = df_input
 
-            # ##################### OLD ######################
-            # explainer = shap.TreeExplainer(model)
-            # shap_values = explainer.shap_values(df_input)
-
-            # # Se shape è (1, n_features, 2) -> prendi esempio 0 e classe 1
-            # if isinstance(shap_values, np.ndarray) and shap_values.ndim == 3:
-            #     shap_vals = shap_values[0, :, 1]  # primo esempio, tutte le feature, classe 1
-            # elif isinstance(shap_values, list):
-            #     shap_vals = shap_values[1][0]  # vecchia lista, primo esempio classe 1
-            # else:
-            #     shap_vals = shap_values[0]  # caso array 2D semplice
-
-            # # Base value
-            # base_val = explainer.expected_value
-            # if isinstance(base_val, (list, np.ndarray)):
-            #     base_val_array = np.array(base_val).ravel()
-            #     if len(base_val_array) > 1:
-            #         base_val = float(base_val_array[1])  # classe 1
-            #     else:
-            #         base_val = float(base_val_array[0])
-            # else:
-            #     base_val = float(base_val) # type: ignore
-
-            # # Waterfall plot
-            # fig, ax = plt.subplots()  
-            # shap.plots.waterfall(
-            #     shap.Explanation(
-            #         values=shap_vals,
-            #         base_values=base_val,
-            #         data=df_input.iloc[0],
-            #         feature_names=df_input.columns
-            #     ),
-            #     show=False
-            # )
-            # st.pyplot(fig)
-
-        elif name == "AdaBoost":
-            # Background set: usa un piccolo campione del training set
-            background = smote_train_set.sample(50, random_state=42)
-            background = background[model_ada.feature_names_in_] 
-
-            df_input_aligned = df_input[model_ada.feature_names_in_]
-
-            explainer = shap.KernelExplainer(model_ada.predict_proba, background.sample(50, random_state=42))
-            shap_values = explainer.shap_values(df_input_aligned, nsamples=100)
-
-            # Se shape è (1, n_features, 2) -> prendi esempio 0 e classe 1
-            if isinstance(shap_values, np.ndarray) and shap_values.ndim == 3:
-                shap_vals = shap_values[0, :, 1]  # primo esempio, tutte le feature, classe 1
-            elif isinstance(shap_values, list):
-                shap_vals = shap_values[1][0]  # vecchia lista, primo esempio classe 1
-            else:
-                shap_vals = shap_values[0]  # caso array 2D semplice
-
-            # Base value
-            base_val = explainer.expected_value
-            if isinstance(base_val, (list, np.ndarray)):
-                base_val_array = np.array(base_val).ravel()
-                if len(base_val_array) > 1:
-                    base_val = float(base_val_array[1])  # classe 1
-                else:
-                    base_val = float(base_val_array[0])
-            else:
-                base_val = float(base_val)
-
-            fig, ax = plt.subplots()  
-            shap.plots.waterfall(
-                shap.Explanation(
-                    values=shap_vals,
-                    base_values=base_val,
-                    data=df_input_aligned.iloc[0],
-                    feature_names=df_input_aligned.columns
-                ),
-                show=False
-            )
-            st.pyplot(fig)
-
-        elif name == "Gaussian NB":
-            proba = model.predict_proba(df_input)[0]
-            st.write(f"Posterior probabilities (Legitimate vs Fraudulent): {proba}")
-            st.write(f"Transaction classified as **{results[name]}** with probability {max(proba):.2f}")
-
-        elif name == "KNN":
-            neighbors = model.kneighbors(df_input, n_neighbors=3, return_distance=True)
-            neighbor_indices = neighbors[1][0]
-            neighbor_labels = y_train.iloc[neighbor_indices].values
-            st.write("The 3 most similar neighbors and their true labels:")
-            st.table(pd.DataFrame({
-                "Index": neighbor_indices,
-                "Label": ["Fraudulent" if l==1 else "Legitimate" for l in neighbor_labels]
-            }))
-            st.write(f"Transaction classified as **{results[name]}** because {sum(neighbor_labels)} of the 3 neighbors were Fraudulent.")
+    
+        explainer = shap.Explainer(model.predict_proba, background)
+        
+        explanation = explainer(df_input_aligned, max_evals=200)
+        
+        fig, ax = plt.subplots()
+        shap.plots.waterfall(explanation[0, :, 1], show=False, max_display=14)
+        st.pyplot(fig)
