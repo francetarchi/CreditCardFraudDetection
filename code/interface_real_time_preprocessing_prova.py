@@ -29,7 +29,7 @@ def mi_score(X, y):
 
 
 #Funzione per caricare il dataset
-@st.cache_data  # salvo il dataset in memoria, altrimenti Streamlit lo ricarica ogni volta che clicco "Predict"
+@st.cache_data(show_spinner=False)  # salvo il dataset in memoria, altrimenti Streamlit lo ricarica ogni volta che clicco "Predict"
 def load_dataset():
     print("--- SETUP")
     print("Loading balanced preprocessed training set...")
@@ -42,7 +42,7 @@ def load_dataset():
 
 
 # Funzione per caricare la pipeline di preprocessing
-@st.cache_resource  # salvo i preprocessors e le selected_features in memoria, altrimenti Streamlit li ricarica ogni volta che clicco "Predict"
+@st.cache_resource(show_spinner=False)  # salvo i preprocessors e le selected_features in memoria, altrimenti Streamlit li ricarica ogni volta che clicco "Predict"
 def load_preprocessing_pipeline():
     print("Loading preprocessors...")
     imputer = joblib.load(paths.IMPUTER_PATH)
@@ -58,7 +58,7 @@ def load_preprocessing_pipeline():
 
 
 # Funzione per caricare i modelli salvati
-@st.cache_resource  # salvo i modelli in memoria, altrimenti Streamlit li ricarica ogni volta che clicco "Predict"
+@st.cache_resource(show_spinner=False)  # salvo i modelli in memoria, altrimenti Streamlit li ricarica ogni volta che clicco "Predict"
 def load_models():
     print("Loading models...")
     loaded_models = {
@@ -69,9 +69,31 @@ def load_models():
         "AdaBoost": joblib.load(paths.ADA_PATH),
         "XGBoost": joblib.load(paths.XGB_PATH)
     }
+
+    return loaded_models
+
+
+# Funzione per caricare gli SHAP explainers
+@st.cache_resource(show_spinner=False)  # salvo gli SHAP explainers in memoria, altrimenti Streamlit li ricarica ogni volta che clicco "Predict"
+def load_shap_explainers(_models, _smote_train_set):
+    print("Building SHAP explainers...")
+    explainers = {}
+
+    # Creo il background data di SHAP (per utilizzare solamente 50 campioni)
+    background_data = _smote_train_set.sample(50, random_state=42)
+
+    for name, model in _models.items():
+        # Allineamento colonne per sicurezza
+        if hasattr(model, "feature_names_in_"):
+            cols = model.feature_names_in_
+            bg = background_data[cols]
+        else:
+            bg = background_data
+            
+        explainers[name] = shap.Explainer(model.predict_proba, bg)
     
     print("--- SETUP DONE: you can use the application.\n")
-    return loaded_models
+    return explainers
 
 
 # Funzione di preprocessing per l'input utente
@@ -123,9 +145,11 @@ def preprocess_user_input(df):
 
 
 ############# LOADING ELEMENTS #############
-smote_train_set, X_train, y_test = load_dataset()
-imputer, scaler, encoder, var_thresh, selector, selected_features = load_preprocessing_pipeline()
-models = load_models()
+with st.spinner('Loading system resources...'):
+    smote_train_set, X_train, y_test = load_dataset()
+    imputer, scaler, encoder, var_thresh, selector, selected_features = load_preprocessing_pipeline()
+    models = load_models()
+    shap_explainers = load_shap_explainers(models, smote_train_set)
 
 
 
@@ -196,27 +220,21 @@ if st.button("Predict"):
     ## SHAP explanations ##
     print("Computing SHAP explanations...")
     st.subheader("Explanations (per model):")
-    for name, model in models.items():
-        st.subheader(f"Explanation for {name}")
-
-        # Usiamo 50 campioni per mantenere il calcolo veloce
-        background = smote_train_set.sample(50, random_state=42)
-        
-        # Allineamento colonne (sicurezza per evitare errori di feature mismatch)
-        if hasattr(model, "feature_names_in_"):
-            cols = model.feature_names_in_
-            background = background[cols]
-            df_input_aligned = df_input[cols]
-        else:
-            df_input_aligned = df_input
-    
-        explainer = shap.Explainer(model.predict_proba, background)
-        
-        explanation = explainer(df_input_aligned, max_evals=200) # type: ignore
-        
-        fig, ax = plt.subplots()
-        shap.plots.waterfall(explanation[0, :, 1], show=False, max_display=14)
-        st.pyplot(fig)
+    for name, explainer in shap_explainers.items():
+        with st.expander(f"See explanation for {name}"):
+            # Allineamento input
+            model = models[name]
+            if hasattr(model, "feature_names_in_"):
+                df_input_aligned = df_input[model.feature_names_in_]
+            else:
+                df_input_aligned = df_input
+            
+            # Calcolo SHAP values
+            explanation = explainer(df_input_aligned, max_evals=200)    # max_evals controlla la precisione del calcolo
+            
+            fig, ax = plt.subplots()
+            shap.plots.waterfall(explanation[0, :, 1], show=False, max_display=14)
+            st.pyplot(fig)
     print("  --> DONE.")
 
     print("--- PREDICT DONE: you can now ask for a new prediction.\n")
