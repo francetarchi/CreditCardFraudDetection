@@ -4,9 +4,15 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
+from sklearn.feature_selection import mutual_info_classif
+
+# --- FIX 1: SILENZIAMO I WARNING NON BLOCCANTI ---
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 import paths
-
 
 # Carico il training set per informazioni sulle feature
 print("Loading balanced preprocessed training set...")
@@ -15,15 +21,24 @@ smote_train_set = pd.read_csv(paths.SMOTE20_PREP_TRAIN_PATH)
 X_train = smote_train_set.drop(columns=["isFraud"])
 y_train = smote_train_set["isFraud"]
 
+def mi_score(X, y):
+    if hasattr(X, "toarray"):
+        X = X.toarray()
+    return mutual_info_classif(X, y, random_state=42)
+
 # Carico i preprocessori salvati
 print("Loading preprocessors...")
 imputer = joblib.load(paths.IMPUTER_PATH)
 scaler = joblib.load(paths.SCALER_PATH)
 encoder = joblib.load(paths.ENCODER_PATH)
+var_thresh = joblib.load(paths.VAR_THRESH_PATH)
+selector = joblib.load(paths.SELECTOR_PATH)
 
 # Carico le feature selezionate durante il preprocessing
 print("Loading selected features...")
-selected_features = pd.read_csv(paths.SELECTED_FEATURES_PATH)
+# selected_features = pd.read_csv(paths.SELECTED_FEATURES_PATH).values.ravel().tolist()
+selected_features = np.load(paths.SELECTED_FEATURES_PATH, allow_pickle=True)
+
 
 # Carico i modelli salvati
 print("Loading models...")
@@ -34,31 +49,52 @@ model_knn = joblib.load(paths.KNN_PATH)
 model_ada = joblib.load(paths.ADA_PATH)
 model_xgb = joblib.load(paths.XGB_PATH)
 
-
 # Funzione di preprocessing per l'input utente
 def preprocess_user_input(df):
     print("Preprocessing user input...")
+
+    df = df.replace(r'^\s*$', np.nan, regex=True)
+    df = df.infer_objects()
     
-    # --- Feature temporali ---
-    df["TransactionDT_days"] = df["TransactionDT"] / (24*60*60)
-    hour = (df["TransactionDT"] // 3600) % 24
-    dayofweek = (df["TransactionDT"] // (24*3600)) % 7
-    df["hour_sin"] = np.sin(2 * np.pi * hour / 24)
-    df["hour_cos"] = np.cos(2 * np.pi * hour / 24)
-    df["dayofweek_sin"] = np.sin(2 * np.pi * dayofweek / 7)
-    df["dayofweek_cos"] = np.cos(2 * np.pi * dayofweek / 7)
+    # 2. Feature Engineering Temporale (CRUCIALE: deve essere fatto PRIMA dell'imputer)
+    if "TransactionDT" in df.columns:
+        df["TransactionDT_days"] = df["TransactionDT"] / (24*60*60)
+        hour = (df["TransactionDT"] // 3600) % 24
+        dayofweek = (df["TransactionDT"] // (24*3600)) % 7
+        df["hour_sin"] = np.sin(2 * np.pi * hour / 24)
+        df["hour_cos"] = np.cos(2 * np.pi * hour / 24)
+        df["dayofweek_sin"] = np.sin(2 * np.pi * dayofweek / 7)
+        df["dayofweek_cos"] = np.cos(2 * np.pi * dayofweek / 7)
 
-    # --- Imputazione ---
-    df = imputer.transform(df)
+    # 3. Imputazione
+    # Recuperiamo i nomi delle colonne dall'imputer per mantenere coerenza
+    cat_cols = imputer.transformers_[0][2]
+    num_cols = imputer.transformers_[1][2]
+    imputed_cols = list(cat_cols) + list(num_cols)
+    
+    # Transform ritorna numpy array -> riconvertiamo in DataFrame
+    imputed_array = imputer.transform(df)
+    df_imputed = pd.DataFrame(imputed_array, columns=imputed_cols)
+    
+    # Convertiamo le colonne numeriche in float per lo scaler
+    df_imputed[num_cols] = df_imputed[num_cols].astype(float)
 
-    # --- Scaling ---
-    df = scaler.transform(df)
+    # 4. Scaling
+    scaled_array = scaler.transform(df_imputed)
+    df_scaled = pd.DataFrame(scaled_array, columns=imputed_cols)
 
-    # --- Encoding ---
-    df = encoder.transform(df)
-
-    # --- Feature selection ---
-    df_final = pd.DataFrame(df, columns=selected_features.columns)
+    # 5. Encoding
+    encoded_array = encoder.transform(df_scaled)
+    
+    # 6. Variance Threshold
+    var_array = var_thresh.transform(encoded_array)
+    
+    # 7. Feature Selection
+    selected_array = selector.transform(var_array)
+    
+    # 8. Creazione DataFrame Finale
+    # USIAMO LA LISTA DI FEATURE CORRETTA, NON .columns
+    df_final = pd.DataFrame(selected_array.toarray(), columns=selected_features)
 
     return df_final
 
@@ -86,7 +122,7 @@ user_input = pd.DataFrame([row_dict])
 if "isFraud" in user_input.columns:
     user_input = user_input.drop(columns=["isFraud"])
 
-edited_df = st.data_editor(user_input, num_rows="fixed", use_container_width=True)
+edited_df = st.data_editor(user_input, num_rows="fixed", width="stretch")
 
 # Ricostruisco il DataFrame dall'input modificabile
 user_input_df = pd.DataFrame([edited_df.iloc[0].to_dict()])
@@ -132,40 +168,66 @@ if st.button("Predict"):
     for name, model in models.items():
         st.subheader(f"Explanation for {name}")
         if name in ["Random Forest", "Decision Tree", "XGBoost"]:
-            explainer = shap.TreeExplainer(model)
-            shap_values = explainer.shap_values(df_input)
-
-            # Se shape è (1, n_features, 2) -> prendi esempio 0 e classe 1
-            if isinstance(shap_values, np.ndarray) and shap_values.ndim == 3:
-                shap_vals = shap_values[0, :, 1]  # primo esempio, tutte le feature, classe 1
-            elif isinstance(shap_values, list):
-                shap_vals = shap_values[1][0]  # vecchia lista, primo esempio classe 1
+            ##################### NEW ######################
+            background = shap.sample(X_train, 100, random_state=42)
+            explainer = shap.TreeExplainer(model, data=background, model_output='probability')
+            
+            # Usa l'explainer come callable per ottenere l'oggetto Explanation direttamente
+            # Questo incapsula values, base_values, data e feature_names automaticamente
+            explanation = explainer(df_input)
+            
+            # Per un modello di classificazione binaria, l'oggetto explanation avrà dimensioni:
+            # (n_samples, n_features, n_classes).
+            # Tu hai 1 sample (l'input utente) e vuoi la classe 1 (Fraud).
+            # Quindi selezioni: indice 0, tutte le feature, classe 1.
+            
+            # Verifica se l'output ha la dimensione delle classi (dipende dalla versione di SHAP/Modello)
+            if len(explanation.shape) == 3:
+                shap_explanation_single = explanation[0, :, 1]
             else:
-                shap_vals = shap_values[0]  # caso array 2D semplice
-
-            # Base value
-            base_val = explainer.expected_value
-            if isinstance(base_val, (list, np.ndarray)):
-                base_val_array = np.array(base_val).ravel()
-                if len(base_val_array) > 1:
-                    base_val = float(base_val_array[1])  # classe 1
-                else:
-                    base_val = float(base_val_array[0])
-            else:
-                base_val = float(base_val) # type: ignore
-
-            # Waterfall plot
-            fig, ax = plt.subplots()  
-            shap.plots.waterfall(
-                shap.Explanation(
-                    values=shap_vals,
-                    base_values=base_val,
-                    data=df_input.iloc[0],
-                    feature_names=df_input.columns
-                ),
-                show=False
-            )
+                # Alcuni modelli/versioni potrebbero restituire direttamente l'output per la classe positiva
+                shap_explanation_single = explanation[0]
+            
+            fig, ax = plt.subplots()
+            # Passa l'oggetto Explanation affettato direttamente al plot
+            shap.plots.waterfall(shap_explanation_single, show=False, max_display=14)
             st.pyplot(fig)
+
+            # ##################### OLD ######################
+            # explainer = shap.TreeExplainer(model)
+            # shap_values = explainer.shap_values(df_input)
+
+            # # Se shape è (1, n_features, 2) -> prendi esempio 0 e classe 1
+            # if isinstance(shap_values, np.ndarray) and shap_values.ndim == 3:
+            #     shap_vals = shap_values[0, :, 1]  # primo esempio, tutte le feature, classe 1
+            # elif isinstance(shap_values, list):
+            #     shap_vals = shap_values[1][0]  # vecchia lista, primo esempio classe 1
+            # else:
+            #     shap_vals = shap_values[0]  # caso array 2D semplice
+
+            # # Base value
+            # base_val = explainer.expected_value
+            # if isinstance(base_val, (list, np.ndarray)):
+            #     base_val_array = np.array(base_val).ravel()
+            #     if len(base_val_array) > 1:
+            #         base_val = float(base_val_array[1])  # classe 1
+            #     else:
+            #         base_val = float(base_val_array[0])
+            # else:
+            #     base_val = float(base_val) # type: ignore
+
+            # # Waterfall plot
+            # fig, ax = plt.subplots()  
+            # shap.plots.waterfall(
+            #     shap.Explanation(
+            #         values=shap_vals,
+            #         base_values=base_val,
+            #         data=df_input.iloc[0],
+            #         feature_names=df_input.columns
+            #     ),
+            #     show=False
+            # )
+            # st.pyplot(fig)
 
         elif name == "AdaBoost":
             # Background set: usa un piccolo campione del training set
